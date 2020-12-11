@@ -1,0 +1,2 @@
+for i = range(1,2):
+	print(i)
