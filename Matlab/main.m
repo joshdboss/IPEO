@@ -23,8 +23,7 @@ set(groot,'defaultfigureposition',[400 100 1000 400])
 
 
 %% Define functions =======================================================
-% normalize an image between 0 and 1
-imnorm = @(x) (x - min(x(:))) ./ (max(x(:)) - min(x(:)));
+
 
 
 %% Essai 1 : avec 1 image ayant bandes 4,5,6 ==============================
@@ -41,40 +40,8 @@ SWIR_l8_456 = im_l8_456(:,:,3);
 [l8_ndwi_456, l8_ndsi_456, ~] = ...
     getIndices(NaN, red_l8_456, NIR_l8_456, SWIR_l8_456);
 
-%% Show the images
-figure()
-set(gcf,'Position',[100 -100 1000 600])
-
-% Unmodified indices images
-subplot(2,2,1);
-mapshow(l8_ndwi_456, refmat_l8_456)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('NDWI');
-
-subplot(2,2,2);
-mapshow(l8_ndsi_456, refmat_l8_456)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('NDSI');
-
-% Normalized images
-subplot(2,2,3);
-mapshow(imnorm(l8_ndwi_456), refmat_l8_456)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Normalized NDWI');
-
-subplot(2,2,4);
-mapshow(imnorm(l8_ndsi_456), refmat_l8_456)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Normalized NDSI');
-
+% plot the images
+plotIndices(l8_ndwi_456, l8_ndsi_456, NaN, refmat_l8_456);
 
 
 %% Essai 2 avec 9 images, chacune ayant 1 bande (de 1 à 9) ================
@@ -104,50 +71,5 @@ file_l8_9 = 'Images/2020-10-20-L8_B09.tiff'; % band 9
 [l8_ndwi, l8_ndsi, l8_mndwi] = ...
     getIndices(im_l8_3, im_l8_4, im_l8_5, im_l8_6);
 
-%% Show the images
-figure()
-set(gcf,'Position',[100 -100 1500 600])
-
-% Unmodified indices images
-subplot(2,3,1);
-mapshow(l8_ndwi, refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('NDWI');
-
-subplot(2,3,2);
-mapshow(l8_ndsi, refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('NDSI');
-
-subplot(2,3,3);
-mapshow(l8_mndwi, refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('MNDWI');
-
-% Normalized images
-subplot(2,3,4);
-mapshow(imnorm(l8_ndwi), refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Normalized NDWI');
-
-subplot(2,3,5);
-mapshow(imnorm(l8_ndsi), refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Normalized NDSI');
-
-subplot(2,3,6);
-mapshow(imnorm(l8_mndwi), refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Normalized MNDWI');
+% plot the images
+plotIndices(l8_ndwi, l8_ndsi, l8_mndwi, refmat_l8_1);

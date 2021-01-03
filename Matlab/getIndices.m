@@ -9,6 +9,11 @@ function [NDWI, NDSI, MNDWI] = getIndices(G, R, NIR, SWIR)
 %   R (M x N) : The red band of the image
 %   NIR (M x N) : The NIR band of the image
 %   SWIR (M x N) : The SWIR band of the image
+%
+%OUTPUTS
+%   NDWI (M x N): Matrix of the NDWI index of the image
+%   NDSI (M x N): Matrix of the NDWI index of the image
+%   MNDWI (M x N): Matrix of the NDWI index of the image
 
 % get the indices
 NDWI = (NIR - SWIR) ./ (NIR + SWIR);
