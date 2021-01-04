@@ -23,70 +23,39 @@ set(groot,'defaultfigureposition',[400 100 1000 400])
 
 
 %% Define functions =======================================================
+imnorm = @(x) (x - min(x(:))) ./ (max(x(:)) - min(x(:)));
 
 
-
-%% Essai 1 : avec 1 image ayant bandes 4,5,6 ==============================
+%% Start of analysis ==============================
 % Image. has band 4,5 and 6 (here 1,2,3)
-file_l8_456 = 'Images/2020-10-20-L8_B456.tiff';
+file_3 = 'Images/essai3/2020-10-20-L8_B03.tiff';
+file_456 = 'Images/essai3/2020-10-20-L8_B456.tiff';
+file_DEM = 'Images/essai3/2020-10-20-00_00_2020-10-20-23_59_DEM_MAPZEN_DEM_(Raw).tiff';
 
-[im_l8_456, refmat_l8_456] = loadImage(file_l8_456); % read landsat image
-% split the image into its bands for verbosity
-red_l8_456 = im_l8_456(:,:,1);
-NIR_l8_456 = im_l8_456(:,:,2);
-SWIR_l8_456 = im_l8_456(:,:,3);
+% read landsat image
+[im(:,:,1), refmat{1}] = loadImage(file_3);
+[im(:,:,2:4), refmat{2}] = loadImage(file_456);
+[im_DEM, refmat{3}] = loadImage(file_DEM);
+% resize image to be of same size as DEM. quite naive, probably better way
+% to do this in the future...
+im = imresize(im, size(im_DEM));
+im(:,:,5) = im_DEM;
 
-% get the relevant indices. No green band is available, so not sent
-[ndwi_l8_456, ndsi_l8_456, ~] = ...
-    getIndices(NaN, red_l8_456, NIR_l8_456, SWIR_l8_456);
+% get the relevant indices
+[ndwi, ndsi, mndwi] = ...
+    getIndices(im(:,:,1), im(:,:,2), ...
+    im(:,:,3), im(:,:,4));
 
 % plot the images
-plotIndices(ndwi_l8_456, ndsi_l8_456, NaN, refmat_l8_456);
+plotIndices(ndwi, ndsi, mndwi, ...
+    refmat{3});
 
 % get the lakes on the image
-lakes_l8_456 = findLakes(ndwi_l8_456, [0.05,0.75], ...
-    ndsi_l8_456, [-1, 2], 1, [-1, 2], 1, [-1, 2]);
+lakes = findLakes(ndwi, [0.05,0.75], ...
+    ndsi, [-1, 2], mndwi, [-1, 2], ...
+    imnorm(abs(gradient(im(:,:,5)))), [-1, 0.01]);
 
 % plot the lakes on the given map
 CMap = [0, 0, 0;  1, 0, 0]; % define the colormap
-plotOverlay(im_l8_456, lakes_l8_456, refmat_l8_456, CMap, ...
-    1, 'Original image (B 4-6)')
-   
-
-%% Essai 2 avec 9 images, chacune ayant 1 bande (de 1 à 9) ================
-% loop through all bands
-for i = 1:9
-    fileName = sprintf('Images/2020-10-20-L8_B%02d.tiff',i);
-    [im_l8_indiv(:,:,i), refmat_l8_indiv{i}] = loadImage(fileName);
-end
-
-% Green -> band 3
-% Red -> band 4
-% NIR -> band 5
-% SWIR -> band 6
-
-% get the relevant indices. No green band is available, so not sent
-[ndwi_l8_indiv, ndsi_l8_indiv, mndwi_l8_indiv] = ...
-    getIndices(im_l8_indiv(:,:,3), im_l8_indiv(:,:,4), ...
-    im_l8_indiv(:,:,5), im_l8_indiv(:,:,6));
-
-% plot the images
-plotIndices(ndwi_l8_indiv, ndsi_l8_indiv, mndwi_l8_indiv, ...
-    refmat_l8_indiv{1});
-
-% get the lakes on the image
-lakes_l8_indiv = findLakes(ndwi_l8_indiv, [0.05,0.75], ...
-    ndsi_l8_indiv, [-1, 2], mndwi_l8_indiv, [-1, 2], 1, [-1, 2]);
-
-% plot the lakes on the given map
-CMap = [0, 0, 0;  1, 0, 0]; % define the colormap
-plotOverlay(im_l8_indiv(:,:,3:5), lakes_l8_indiv, refmat_l8_indiv{1}, ...
+plotOverlay(im(:,:,1:3), lakes, refmat{3}, ...
     CMap, 1, 'Original image (B 3-5)')
-
-% %% WIP: figure out how to combine images with different georeferences
-% 
-% figure
-% mapshow(im_l8_456, refmat_l8_456)
-% 
-% figure
-% mapshow(im_l8_indiv(:,:,3:5), refmat_l8_indiv{1})
