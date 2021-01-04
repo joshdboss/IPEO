@@ -37,39 +37,83 @@ NIR_l8_456 = im_l8_456(:,:,2);
 SWIR_l8_456 = im_l8_456(:,:,3);
 
 % get the relevant indices. No green band is available, so not sent
-[l8_ndwi_456, l8_ndsi_456, ~] = ...
+[ndwi_l8_456, ndsi_l8_456, ~] = ...
     getIndices(NaN, red_l8_456, NIR_l8_456, SWIR_l8_456);
 
 % plot the images
-plotIndices(l8_ndwi_456, l8_ndsi_456, NaN, refmat_l8_456);
+plotIndices(ndwi_l8_456, ndsi_l8_456, NaN, refmat_l8_456);
+
+% get the lakes on the image
+lakes_l8_456 = findLakes(ndwi_l8_456, [0.05,0.75], ...
+    ndsi_l8_456, [-1, 2], 1, [-1, 2], 1, [-1, 2]);
+
+% plot the lakes
+figure()
+set(gcf,'Position',[100 -100 950 300])
+
+subplot(1,2,1);
+mapshow(im_l8_456, refmat_l8_456)
+axis equal tight
+xlabel('Easting [m]')
+ylabel('Northing [m]')
+title('Original image (B 4-6)');
+
+subplot(1,2,2);
+mapshow(lakes_l8_456, refmat_l8_456)
+axis equal tight
+xlabel('Easting [m]')
+ylabel('Northing [m]')
+title('Lakes on the image');
+    
 
 
 %% Essai 2 avec 9 images, chacune ayant 1 bande (de 1 à 9) ================
-% Image names. individual bands now
-file_l8_1 = 'Images/2020-10-20-L8_B01.tiff'; % band 1
-file_l8_2 = 'Images/2020-10-20-L8_B02.tiff'; % band 2
-file_l8_3 = 'Images/2020-10-20-L8_B03.tiff'; % band 3
-file_l8_4 = 'Images/2020-10-20-L8_B04.tiff'; % band 4
-file_l8_5 = 'Images/2020-10-20-L8_B05.tiff'; % band 5
-file_l8_6 = 'Images/2020-10-20-L8_B06.tiff'; % band 6
-file_l8_7 = 'Images/2020-10-20-L8_B07.tiff'; % band 7
-file_l8_8 = 'Images/2020-10-20-L8_B08.tiff'; % band 8
-file_l8_9 = 'Images/2020-10-20-L8_B09.tiff'; % band 9
+% loop through all bands
+for i = 1:9
+    fileName = sprintf('Images/2020-10-20-L8_B%02d.tiff',i);
+    [im_l8_indiv(:,:,i), refmat_l8_indiv{i}] = loadImage(fileName);
+end
 
-% read landsat images
-[im_l8_1, refmat_l8_1] = loadImage(file_l8_1);
-[im_l8_2, refmat_l8_2] = loadImage(file_l8_2);
-[im_l8_3, refmat_l8_3] = loadImage(file_l8_3); % Green band
-[im_l8_4, refmat_l8_4] = loadImage(file_l8_4); % Red band
-[im_l8_5, refmat_l8_5] = loadImage(file_l8_5); % NIR band
-[im_l8_6, refmat_l8_6] = loadImage(file_l8_6); % SWIR band
-[im_l8_7, refmat_l8_7] = loadImage(file_l8_7);
-[im_l8_8, refmat_l8_8] = loadImage(file_l8_8);
-[im_l8_9, refmat_l8_9] = loadImage(file_l8_9);
+% Green -> band 3
+% Red -> band 4
+% NIR -> band 5
+% SWIR -> band 6
 
 % get the relevant indices. No green band is available, so not sent
-[l8_ndwi, l8_ndsi, l8_mndwi] = ...
-    getIndices(im_l8_3, im_l8_4, im_l8_5, im_l8_6);
+[ndwi_l8_indiv, ndsi_l8_indiv, mndwi_l8_indiv] = ...
+    getIndices(im_l8_indiv(:,:,3), im_l8_indiv(:,:,4), ...
+    im_l8_indiv(:,:,5), im_l8_indiv(:,:,6));
 
 % plot the images
-plotIndices(l8_ndwi, l8_ndsi, l8_mndwi, refmat_l8_1);
+plotIndices(ndwi_l8_indiv, ndsi_l8_indiv, mndwi_l8_indiv, ...
+    refmat_l8_indiv{1});
+
+% get the lakes on the image
+lakes_l8_indiv = findLakes(ndwi_l8_indiv, [0.05,0.75], ...
+    ndsi_l8_indiv, [-1, 2], mndwi_l8_indiv, [-1, 2], 1, [-1, 2]);
+
+% plot the lakes
+figure()
+set(gcf,'Position',[100 -100 950 300])
+
+subplot(1,2,1);
+mapshow(im_l8_indiv(:,:,3:5), refmat_l8_indiv{1})
+axis equal tight
+xlabel('Easting [m]')
+ylabel('Northing [m]')
+title('Original image (B 3-5)');
+
+subplot(1,2,2);
+mapshow(lakes_l8_indiv, refmat_l8_indiv{1})
+axis equal tight
+xlabel('Easting [m]')
+ylabel('Northing [m]')
+title('Lakes on the image');
+
+% %% WIP: figure out how to combine images with different georeferences
+% 
+% figure
+% mapshow(im_l8_456, refmat_l8_456)
+% 
+% figure
+% mapshow(im_l8_indiv(:,:,3:5), refmat_l8_indiv{1})
