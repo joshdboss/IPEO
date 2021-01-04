@@ -50,7 +50,7 @@ lakes_l8_456 = findLakes(ndwi_l8_456, [0.05,0.75], ...
 % plot the lakes on the given map
 CMap = [0, 0, 0;  1, 0, 0]; % define the colormap
 plotOverlay(im_l8_456, lakes_l8_456, refmat_l8_456, CMap, ...
-    1, 'Original image (B 4-6) with lakes superimposed')
+    1, 'Original image (B 4-6)')
    
 
 %% Essai 2 avec 9 images, chacune ayant 1 bande (de 1 à 9) ================
@@ -81,7 +81,7 @@ lakes_l8_indiv = findLakes(ndwi_l8_indiv, [0.05,0.75], ...
 % plot the lakes on the given map
 CMap = [0, 0, 0;  1, 0, 0]; % define the colormap
 plotOverlay(im_l8_indiv(:,:,3:5), lakes_l8_indiv, refmat_l8_indiv{1}, ...
-    CMap, 1, 'Original image (B 3-5) with lakes superimposed')
+    CMap, 1, 'Original image (B 3-5)')
 
 % %% WIP: figure out how to combine images with different georeferences
 % 

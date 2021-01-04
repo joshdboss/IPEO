@@ -16,13 +16,23 @@ RGB  = ind2rgb(overlay + 1, colormap);
 
 % plot the map
 figure()
-set(gcf,'Position',[100 -100 600 400])
+set(gcf,'Position',[100 -100 1000 500])
 
-mapshow(background + transparency * RGB, refmat)
+% without overlay
+subplot(1,2,1);
+mapshow(background, refmat)
 axis equal tight
 xlabel('Easting [m]')
 ylabel('Northing [m]')
 title(plot_title);
+
+% with overlay
+subplot(1,2,2);
+mapshow(background + transparency * RGB, refmat)
+axis equal tight
+xlabel('Easting [m]')
+ylabel('Northing [m]')
+title(strcat(plot_title,' with overlay'));
 
 end
 
