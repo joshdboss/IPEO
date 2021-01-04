@@ -47,25 +47,11 @@ plotIndices(ndwi_l8_456, ndsi_l8_456, NaN, refmat_l8_456);
 lakes_l8_456 = findLakes(ndwi_l8_456, [0.05,0.75], ...
     ndsi_l8_456, [-1, 2], 1, [-1, 2], 1, [-1, 2]);
 
-% plot the lakes
-figure()
-set(gcf,'Position',[100 -100 950 300])
-
-subplot(1,2,1);
-mapshow(im_l8_456, refmat_l8_456)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Original image (B 4-6)');
-
-subplot(1,2,2);
-mapshow(lakes_l8_456, refmat_l8_456)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Lakes on the image');
-    
-
+% plot the lakes on the given map
+CMap = [0, 0, 0;  1, 0, 0]; % define the colormap
+plotOverlay(im_l8_456, lakes_l8_456, refmat_l8_456, CMap, ...
+    1, 'Original image (B 4-6)')
+   
 
 %% Essai 2 avec 9 images, chacune ayant 1 bande (de 1 à 9) ================
 % loop through all bands
@@ -92,23 +78,10 @@ plotIndices(ndwi_l8_indiv, ndsi_l8_indiv, mndwi_l8_indiv, ...
 lakes_l8_indiv = findLakes(ndwi_l8_indiv, [0.05,0.75], ...
     ndsi_l8_indiv, [-1, 2], mndwi_l8_indiv, [-1, 2], 1, [-1, 2]);
 
-% plot the lakes
-figure()
-set(gcf,'Position',[100 -100 950 300])
-
-subplot(1,2,1);
-mapshow(im_l8_indiv(:,:,3:5), refmat_l8_indiv{1})
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Original image (B 3-5)');
-
-subplot(1,2,2);
-mapshow(lakes_l8_indiv, refmat_l8_indiv{1})
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Lakes on the image');
+% plot the lakes on the given map
+CMap = [0, 0, 0;  1, 0, 0]; % define the colormap
+plotOverlay(im_l8_indiv(:,:,3:5), lakes_l8_indiv, refmat_l8_indiv{1}, ...
+    CMap, 1, 'Original image (B 3-5)')
 
 % %% WIP: figure out how to combine images with different georeferences
 % 
