@@ -12,7 +12,7 @@ function plotOverlay(background, overlay, refmat, ...
 %   transparent) and 1 (fully opaque).
 
 % get an rgb representation of the overlay
-RGB  = im2double(label2rgb(overlay));
+RGB  = im2double(label2rgb(overlay, a));
 
 % plot the map
 figure()
@@ -28,7 +28,7 @@ title(plot_title);
 
 % with overlay
 subplot(1,2,2);
-mapshow((1 - transparency) * background + transparency * RGB, refmat)
+mapshow(background + transparency * RGB, refmat)
 axis equal tight
 xlabel('Easting [m]')
 ylabel('Northing [m]')

@@ -26,11 +26,11 @@ set(groot,'defaultfigureposition',[400 100 1000 400])
 imnorm = @(x) (x - min(x(:))) ./ (max(x(:)) - min(x(:)));
 
 
-%% Start of analysis ==============================
-% Image. has band 4,5 and 6 (here 1,2,3)
-file_3 = 'Images/essai3/2020-10-20-L8_B03.tiff';
-file_456 = 'Images/essai3/2020-10-20-L8_B456.tiff';
-file_DEM = 'Images/essai3/2020-10-20-00_00_2020-10-20-23_59_DEM_MAPZEN_DEM_(Raw).tiff';
+%% Load data ==============================================================
+% Image. has band 3, 4, 5 and 6 as well as DEM
+file_3 = 'Data/essai3/2020-10-20-L8_B03.tiff';
+file_456 = 'Data/essai3/2020-10-20-L8_B456.tiff';
+file_DEM = 'Data/essai3/DEM/DEM_raw.tiff';
 
 % read landsat image
 [im(:,:,1), refmat{1}] = loadImage(file_3);
@@ -41,21 +41,49 @@ file_DEM = 'Images/essai3/2020-10-20-00_00_2020-10-20-23_59_DEM_MAPZEN_DEM_(Raw)
 im = imresize(im, size(im_DEM));
 im(:,:,5) = im_DEM;
 
+
+%% Preprocess the data ====================================================
+
 % get the relevant indices
 [ndwi, ndsi, mndwi] = ...
     getIndices(im(:,:,1), im(:,:,2), ...
     im(:,:,3), im(:,:,4));
 
-% plot the images
-plotIndices(ndwi, ndsi, mndwi, ...
-    refmat{3});
+% normalize the indices
+norm_ndwi = imnorm(ndwi);
+norm_ndsi = imnorm(ndsi);
+norm_mndwi = imnorm(mndwi);
+
+% get the data into a single "image"
+img_data(:,:,1) = ndwi;
+img_data(:,:,2) = ndsi;
+img_data(:,:,3) = mndwi;
+img_data(:,:,4) = abs(gradient(im(:,:,5)));
+
+
+%% Supervised machine learning ============================================
+% load labelled data. note that traceROI must have been called separately
+% before. call it using traceROI(im(:,:,1:3)) after the data been loaded
+load('Data/essai3/labelled_data/index_DEM.mat');
+load('Data/essai3/labelled_data/labels_DEM.mat');
+
+classMap = supervisedLearning(img_data, index, labels);
+
+
+%% Classify the image =====================================================
 
 % get the lakes on the image
 lakes = findLakes(ndwi, [0.05,0.75], ...
     ndsi, [-1, 2], mndwi, [-1, 2], ...
-    imnorm(abs(gradient(im(:,:,5)))), [-1, 0.01]);
+    1, [-1, 2]);
+    %imnorm(abs(gradient(im(:,:,5)))), [-1, 0.01]);
+
+
+%% Plot everything ========================================================
+
+% plot the images
+plotIndices(ndwi, ndsi, mndwi, refmat{3});
 
 % plot the lakes on the given map
-CMap = [0, 0, 0;  1, 0, 0]; % define the colormap
-plotOverlay(im(:,:,1:3), lakes, refmat{3}, ...
-    CMap, 1, 'Original image (B 3-5)')
+plotOverlay(im(:,:,1:3), classMap, refmat{3}, 0.75, ...
+    'Original image (B 3-5)')

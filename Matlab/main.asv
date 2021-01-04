@@ -23,222 +23,105 @@ set(groot,'defaultfigureposition',[400 100 1000 400])
 
 
 %% Define functions =======================================================
-% normalize an image between 0 and 1
 imnorm = @(x) (x - min(x(:))) ./ (max(x(:)) - min(x(:)));
 
 
-%% Essai 1 : avec 1 image ayant bandes 4,5,6 ==============================
-% Image. has band 4,5 and 6 (here 1,2,3)
-file_l8_456 = 'Images/2020-10-20-L8_B456.tiff';
+%% Load data ==============================================================
+% Image. has band 3, 4, 5 and 6 as well as DEM
+file_3 = 'Images/essai3/2020-10-20-L8_B03.tiff';
+file_456 = 'Images/essai3/2020-10-20-L8_B456.tiff';
+file_DEM = 'Images/essai3/DEM/DEM_raw.tiff';
 
-[im_l8_456, refmat_l8_456] = loadImage(file_l8_456); % read landsat image
-% split the image into its bands for verbosity
-red_l8_456 = im_l8_456(:,:,1);
-NIR_l8_456 = im_l8_456(:,:,2);
-SWIR_l8_456 = im_l8_456(:,:,3);
-
-% get the relevant indices. No green band is available, so not sent
-[l8_ndwi_456, l8_ndsi_456, ~] = ...
-    getIndices(NaN, red_l8_456, NIR_l8_456, SWIR_l8_456);
-
-%% Show the images
-figure()
-set(gcf,'Position',[100 -100 1000 600])
-
-% Unmodified indices images
-subplot(2,2,1);
-mapshow(l8_ndwi_456, refmat_l8_456)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('NDWI');
-
-subplot(2,2,2);
-mapshow(l8_ndsi_456, refmat_l8_456)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('NDSI');
-
-% Normalized images
-subplot(2,2,3);
-mapshow(imnorm(l8_ndwi_456), refmat_l8_456)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Normalized NDWI');
-
-subplot(2,2,4);
-mapshow(imnorm(l8_ndsi_456), refmat_l8_456)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Normalized NDSI');
+% read landsat image
+[im(:,:,1), refmat{1}] = loadImage(file_3);
+[im(:,:,2:4), refmat{2}] = loadImage(file_456);
+[im_DEM, refmat{3}] = loadImage(file_DEM);
+% resize image to be of same size as DEM. quite naive, probably better way
+% to do this in the future...
+im = imresize(im, size(im_DEM));
+im(:,:,5) = im_DEM;
 
 
+%% Preprocess the data ====================================================
 
-%% Essai 2 avec 9 images, chacune ayant 1 bande (de 1 à 9) ================
-% Image names. individual bands now
-file_l8_1 = '2020-10-20-L8_B01.tiff'; % band 1
-file_l8_2 = '2020-10-20-L8_B02.tiff'; % band 2
-file_l8_3 = '2020-10-20-L8_B03.tiff'; % band 3
-file_l8_4 = '2020-10-20-L8_B04.tiff'; % band 4
-file_l8_5 = '2020-10-20-L8_B05.tiff'; % band 5
-file_l8_6 = '2020-10-20-L8_B06.tiff'; % band 6
-file_l8_7 = '2020-10-20-L8_B07.tiff'; % band 7
-file_l8_8 = '2020-10-20-L8_B08.tiff'; % band 8
-file_l8_9 = '2020-10-20-L8_B09.tiff'; % band 9
+% get the relevant indices
+[ndwi, ndsi, mndwi] = ...
+    getIndices(im(:,:,1), im(:,:,2), ...
+    im(:,:,3), im(:,:,4));
 
-% read landsat images
-[im_l8_1, refmat_l8_1] = loadImage(file_l8_1);
-[im_l8_2, refmat_l8_2] = loadImage(file_l8_2);
-[im_l8_3, refmat_l8_3] = loadImage(file_l8_3); % Green band
-[im_l8_4, refmat_l8_4] = loadImage(file_l8_4); % Red band
-[im_l8_5, refmat_l8_5] = loadImage(file_l8_5); % NIR band
-[im_l8_6, refmat_l8_6] = loadImage(file_l8_6); % SWIR band
-[im_l8_7, refmat_l8_7] = loadImage(file_l8_7);
-[im_l8_8, refmat_l8_8] = loadImage(file_l8_8);
-[im_l8_9, refmat_l8_9] = loadImage(file_l8_9);
+% normalize the indices
+norm_ndwi = imnorm(ndwi);
+norm_ndsi = imnorm(ndsi);
+norm_mndwi = imnorm(mndwi);
 
-% get the relevant indices. No green band is available, so not sent
-[l8_ndwi, l8_ndsi, l8_mndwi] = ...
-    getIndices(im_l8_3, im_l8_4, im_l8_5, im_l8_6);
+% get the data into a single "image"
+img_data(:,:,1) = ndwi;
+img_data(:,:,2) = ndsi;
+img_data(:,:,3) = mndwi;
+mod_img(:,:,4) = abs(gradient(im(:,:,5)));
 
-%% Show the images
-figure()
-set(gcf,'Position',[100 -100 1500 600])
 
-% Unmodified indices images
-subplot(2,3,1);
-mapshow(l8_ndwi, refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('NDWI');
+%% Supervised machine learning ============================================
+% load labelled data. note that traceROI must have been called separately
+% before. call it using traceROI(im(:,:,1:3)) after the data been loaded
+load('index_DEM.mat');
+load('labels_DEM.mat');
 
-subplot(2,3,2);
-mapshow(l8_ndsi, refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('NDSI');
+% Reshape the data into a 2d matrix
+data = reshape(img_data,size(img_data,1)*size(img_data,2),size(img_data,3));
 
-subplot(3,1,3);
-mapshow(l8_mndwi, refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('MNDWI');
+% Get pixels from each class mask (polygons)
+data_roi = data(cell2mat(index),:);
+ 
+% concatenate the vector of labels
+label_roi = [];
 
-% Normalized images
-subplot(2,3,4);
-mapshow(imnorm(l8_ndwi), refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Normalized NDWI');
+for c = 1:length(labels) % for each polygon
+    % Create a vector with the label of the polygon class.
+    label_roi = [label_roi; repmat(labels(c),size(index{c},1),1)];
+end
 
-subplot(2,3,5);
-mapshow(imnorm(l8_ndsi), refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Normalized NDSI');
+% Split into training and testing samples to evaluate performances
+trainID = 1:10:length(label_roi);
+testID = setdiff(1:length(label_roi),trainID);
 
-subplot(2,3,5);
-mapshow(imnorm(l8_mndwi), refmat_l8_1)
-axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title('Normalized NDSI');
+% Subsample the training and the validation (test) data + labels
+data_train = data_roi(trainID,:);
+label_train = label_roi(trainID);
 
-%% 
+data_valid = data_roi(testID,:);
+label_valid = label_roi(testID);
 
-%% Read Landsat image
+typeNorm = 'std'; % use 'std' to rescale to a unit variance and zero mean
+[data_train_sc, dataMax, dataMin] = classificationScaling(double(data_train), [], [], typeNorm);
 
-% read all L8 bands
-info = geotiffinfo(file_l8_1);
-refmat = info.RefMatrix; % this matrix contains the information on the location and resolution of the top-left pixel
+% Rescale accordingly all image pixels
+% note: the parameters used on the training pixels are given as arguments in the
+% function to rescale accordingly the rest of the pixels
+data_sc = classificationScaling(double(data), dataMax, dataMin, typeNorm);
 
-[l8_mat_1, ~, ~] = geotiffread(file_l8_1);
-[l8_mat_2, ~, ~] = geotiffread(file_l8_2);
-[l8_mat_3, ~, ~] = geotiffread(file_l8_3);
-[l8_mat_4, ~, ~] = geotiffread(file_l8_4);
-[l8_mat_5, ~, ~] = geotiffread(file_l8_5);
-[l8_mat_6, ~, ~] = geotiffread(file_l8_6);
-[l8_mat_7, ~, ~] = geotiffread(file_l8_7);
-[l8_mat_8, ~, ~] = geotiffread(file_l8_8);
-[l8_mat_9, ~, ~] = geotiffread(file_l8_9);
+% The same for the validation pixels
+data_valid_sc = classificationScaling(double(data_valid), dataMax, dataMin, typeNorm);
 
-%% Transform data range and type
-l8_mat_1 = im2double(l8_mat_1); % convert image to double precision
-l8_mat_2 = im2double(l8_mat_2);
-l8_mat_3 = im2double(l8_mat_3);
-l8_mat_4 = im2double(l8_mat_4);
-l8_mat_5 = im2double(l8_mat_5);
-l8_mat_6 = im2double(l8_mat_6);
-l8_mat_7 = im2double(l8_mat_7);
-l8_mat_8 = im2double(l8_mat_8);
-l8_mat_9 = im2double(l8_mat_9);
-%% NDWI index
+class_gml = classify(data_sc, data_train_sc, label_train, 'linear');
+lake_mask = reshape(class_gml,size(img_data,1),size(img_data,2));
+lake_mask(lake_mask ~=1) = 0;
 
-% NDWI = (NIR - SWIR) / (NIR + SWIR) 
-Im_ndwi = (l8_mat_5(:,:)-l8_mat_6(:,:))./(l8_mat_5(:,:)+l8_mat_6(:,:));
 
-%% NDSI index
+%% Classify the image =====================================================
 
-% NDSI = (SWIR - R) / (SWIR + R) 
-Im_ndsi = (l8_mat_6(:,:)-l8_mat_4(:,:))./(l8_mat_6(:,:)+l8_mat_4(:,:));
+% get the lakes on the image
+lakes = findLakes(ndwi, [0.05,0.75], ...
+    ndsi, [-1, 2], mndwi, [-1, 2], ...
+    1, [-1, 2]);
+    %imnorm(abs(gradient(im(:,:,5)))), [-1, 0.01]);
 
-%% MNDWI index
 
-% MNDWI = (G - SWIR) / (G + SWIR) 
-Im_mndwi = (l8_mat_3(:,:)-l8_mat_6(:,:))./(l8_mat_3(:,:)+l8_mat_6(:,:));
-%% Show the images
-figure()
-subplot(1,3,1);
-mapshow(Im_ndwi, refmat)
-axis equal tight
-xlabel('easting [m]')
-ylabel('northing [m]')
-title('NDWI');
+%% Plot everything ========================================================
 
-subplot(1,3,2);
-mapshow(Im_ndsi, refmat)
-axis equal tight
-xlabel('easting [m]')
-ylabel('northing [m]')
-title('NDSI');
+% plot the images
+plotIndices(ndwi, ndsi, mndwi, refmat{3});
 
-subplot(1,3,3);
-mapshow(Im_mndwi, refmat)
-axis equal tight
-xlabel('easting [m]')
-ylabel('northing [m]')
-title('MNDWI');
-
-%% Apply normalization to [0,1] and replot the images
-imnorm = @(x) (x - min(x(:))) ./ (max(x(:)) - min(x(:)));
-
-figure
-set(gcf,'Position',[100 -100 600 1000])
-subplot(3,1,1);
-mapshow(imnorm(Im_ndwi), refmat)
-axis equal tight
-xlabel('easting [m]')
-ylabel('northing [m]')
-title('NDWI');
-
-subplot(3,1,2);
-mapshow(imnorm(Im_ndsi), refmat)
-axis equal tight
-xlabel('easting [m]')
-ylabel('northing [m]')
-title('NDSI');
-
-subplot(3,1,3);
-mapshow(imnorm(Im_mndwi), refmat)
-axis equal tight
-xlabel('easting [m]')
-ylabel('northing [m]')
-title('MNDWI');
+% plot the lakes on the given map
+plotOverlay(im(:,:,1:3), lake_mask, refmat{3}, 0.5, ...
+    'Original image (B 3-5)')
