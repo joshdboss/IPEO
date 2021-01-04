@@ -4,7 +4,7 @@
 % Project title:
 % Glacier retreat in the Himalayas and implications for local populations
 % Authors: Loïc Brouet, Joshua Cayetano-Emond
-% SCIPER NUMBER: xxxxxxx, 309043
+% SCIPER NUMBER: 266712, 309043
 % Date: 2020-12-15
 
 
@@ -65,7 +65,7 @@ end
 % NIR -> band 5
 % SWIR -> band 6
 
-% get the relevant indices. No green band is available, so not sent
+% get the relevant indices.
 [ndwi_l8_indiv, ndsi_l8_indiv, mndwi_l8_indiv] = ...
     getIndices(im_l8_indiv(:,:,3), im_l8_indiv(:,:,4), ...
     im_l8_indiv(:,:,5), im_l8_indiv(:,:,6));
