@@ -50,6 +50,22 @@ data_sc = classificationScaling(double(data), dataMax, dataMin, typeNorm);
 data_valid_sc = classificationScaling(double(data_valid), dataMax, dataMin, typeNorm);
 
 class_gml = classify(data_sc, data_train_sc, label_train, 'linear');
+
+% Train a k-NN model
+k_knn = 5;
+model_knn = fitcknn(data_train_sc,label_train,'NumNeighbors',k_knn);
+% Classifying entire image for k-NN:
+class_knn = predict(model_knn,data_sc);
+
+% Train a SVM model (fitcecoc() function is for multi-class problems)
+model_svm = fitcecoc(data_train_sc,label_train);
+
+% Performs cross-validation to tune the parameters: crossval() function
+model_svm_cv = crossval(model_svm);
+
+% Classifying entire image
+class_svm = predict(model_svm_cv.Trained{1}, data_sc);
+
 classMap = reshape(class_gml,size(im,1),size(im,2));
 
 end
