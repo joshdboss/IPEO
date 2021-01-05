@@ -118,7 +118,7 @@ Im_cr = imcomplement(imreconstruct(imcomplement(Im_d), ...
 
 % remove lakes smaller than the threshold
 minimum_lake_size = 4;
-l = bwareaopen(Im_cr,minimum_lake_size);
+small_lakes_removed = bwareaopen(Im_cr,minimum_lake_size);
 
 %% Plot everything ========================================================
 
@@ -132,7 +132,7 @@ plotIndices(ndwi, ndsi, mndwi, refmat{3});
 % plotOverlay(im_adj(:,:,2:4), Im_cr, refmat{3}, 0.75, ...
 %     'Morphology')
 
-plotOverlay(im_adj(:,:,2:4), removed, refmat{3}, 0.75, ...
+plotOverlay(im_adj(:,:,2:4), small_lakes_removed, refmat{3}, 0.75, ...
     'Small lakes removed')
 
 
