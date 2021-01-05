@@ -1,3 +1,4 @@
+
 function [Image, Reference] = loadImage(fileName)
 %Loads an image in a given file and converts it to double
 %   Loads a given .tiff raster file and converts the image into a double.
