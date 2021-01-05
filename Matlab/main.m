@@ -41,6 +41,8 @@ file_DEM = 'Data/essai3/DEM/DEM_raw.tiff';
 im = imresize(im, size(im_DEM));
 
 
+
+
 %% Preprocess the data ====================================================
 
 % increase contrast
@@ -65,12 +67,16 @@ im_adj = im2double(im_adj);
 % get the slope using Horn's formula. Still doesn't get actual angle of
 % slope since the height is not interpolated properly. Better than nothing
 % I guess
-R = 19; % resolution of the DEM [m]
-G_filter = [[-1, 0, 1]; [-2, 0, 2]; [1, 0, 1]] / (8*R);
-H_filter = [[-1, -2, -1]; [0, 0, 0]; [1, 2, 1]] / (8*R);
-DEM_G = imfilter(im_DEM,G_filter);
-DEM_H = imfilter(im_DEM,H_filter);
-slope = sqrt(DEM_G.^2 + DEM_H.^2);
+% R = 19; % resolution of the DEM [m]
+% G_filter = [[-1, 0, 1]; [-2, 0, 2]; [1, 0, 1]] / (8*R);
+% H_filter = [[-1, -2, -1]; [0, 0, 0]; [1, 2, 1]] / (8*R);
+% DEM_G = imfilter(im_DEM,G_filter);
+% DEM_H = imfilter(im_DEM,H_filter);
+% slope = sqrt(DEM_G.^2 + DEM_H.^2);
+m_per_pixel = (refmat{3}.CellExtentInWorldX + refmat{3}.CellExtentInWorldY)/2;
+pixels_per_degree = 111120 / m_per_pixel;
+gridrv = [pixels_per_degree 0 0];
+[aspect,slope,gradN,gradE] = gradientm(im_DEM, gridrv);
 
 % get the relevant indices
 [ndwi, ndsi, mndwi] = ...
@@ -82,6 +88,7 @@ img_data(:,:,1) = ndwi;
 img_data(:,:,2) = ndsi;
 img_data(:,:,3) = mndwi;
 img_data(:,:,4) = slope;
+img_data(:,:,5:6) = im_adj(:,:,2:3);
 
 
 %% Supervised machine learning ============================================
@@ -102,6 +109,7 @@ lakes = findLakes(ndwi, [0.05,0.75], ...
     %imnorm(abs(gradient(im(:,:,5)))), [-1, 0.01]);
     %imnorm(img_data(:,:,4)), [-1, 0.01]);
 
+    
 %% Morphology fill in gaps and remove small lakes =========================
 
 SE = strel('disk',5); % 'diamond' 'square'
@@ -120,6 +128,7 @@ Im_cr = imcomplement(imreconstruct(imcomplement(Im_d), ...
 minimum_lake_size = 4;
 small_lakes_removed = bwareaopen(Im_cr,minimum_lake_size);
 
+
 %% Plot everything ========================================================
 
 % plot the images
@@ -136,6 +145,7 @@ plotOverlay(im_adj(:,:,2:4), small_lakes_removed, refmat{3}, 0.75, ...
     'Small lakes removed')
 
 
+
 % %% Plot other stuff
 % figure
 % set(gcf,'Position',[100 -100 900 600])
@@ -148,16 +158,16 @@ plotOverlay(im_adj(:,:,2:4), small_lakes_removed, refmat{3}, 0.75, ...
 %     title(sprintf('Original Image. Band %d', i));
 % end
 % 
-% figure
-% set(gcf,'Position',[100 -100 900 600])
-% for i = 1:4
-%     subplot(2,2,i);
-%     mapshow(im_adj(:,:,i), refmat{3})
-%     axis equal tight
-%     xlabel('Easting [m]')
-%     ylabel('Northing [m]')
-%     title(sprintf('Adjusted Image. Band %d', i));
-% end
+figure
+set(gcf,'Position',[100 -100 900 600])
+for i = 1:4
+    subplot(2,2,i);
+    mapshow(im_adj(:,:,i), refmat{3})
+    axis equal tight
+    xlabel('Easting [m]')
+    ylabel('Northing [m]')
+    title(sprintf('Adjusted Image. Band %d', i));
+end
 % 
 % figure
 % set(gcf,'Position',[100 -100 900 600])

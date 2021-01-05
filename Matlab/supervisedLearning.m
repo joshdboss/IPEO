@@ -49,7 +49,7 @@ data_sc = classificationScaling(double(data), dataMax, dataMin, typeNorm);
 % The same for the validation pixels
 data_valid_sc = classificationScaling(double(data_valid), dataMax, dataMin, typeNorm);
 
-% class_gml = classify(data_sc, data_train_sc, label_train, 'linear');
+class_gml = classify(data_sc, data_train_sc, label_train, 'linear');
 
 % % Train a k-NN model
 % k_knn = 5;
@@ -57,16 +57,16 @@ data_valid_sc = classificationScaling(double(data_valid), dataMax, dataMin, type
 % % Classifying entire image for k-NN:
 % class_knn = predict(model_knn,data_sc);
 
-% Train a SVM model (fitcecoc() function is for multi-class problems)
-model_svm = fitcecoc(data_train_sc,label_train);
+% % Train a SVM model (fitcecoc() function is for multi-class problems)
+% model_svm = fitcecoc(data_train_sc,label_train);
+% 
+% % Performs cross-validation to tune the parameters: crossval() function
+% model_svm_cv = crossval(model_svm);
+% 
+% % Classifying entire image
+% class_svm = predict(model_svm_cv.Trained{1}, data_sc);
 
-% Performs cross-validation to tune the parameters: crossval() function
-model_svm_cv = crossval(model_svm);
-
-% Classifying entire image
-class_svm = predict(model_svm_cv.Trained{1}, data_sc);
-
-classMap = reshape(class_svm,size(im,1),size(im,2));
+classMap = reshape(class_gml,size(im,1),size(im,2));
 
 end
 
