@@ -39,40 +39,44 @@ file_DEM = 'Data/essai3/DEM/DEM_raw.tiff';
 % resize image to be of same size as DEM. quite naive, probably better way
 % to do this in the future...
 im = imresize(im, size(im_DEM));
-im(:,:,5) = im_DEM;
 
 
 %% Preprocess the data ====================================================
 
+% increase contrast
+im_adj = zeros(size(im)); %pre-allocate matrix for speed
+gamma = 1;
+for i = 1:size(im,3)
+    im_band = im(:,:,i);
+    im_adj(:,:,i) = imadjust(im_band, stretchlim(im_band(im_band ~= 0), ...
+                    [0.01 0.99]), [0,1], gamma); % adjusted red
+end
+im_adj(:,:,5) = im_DEM;
+
 % get the relevant indices
 [ndwi, ndsi, mndwi] = ...
-    getIndices(im(:,:,1), im(:,:,2), ...
-    im(:,:,3), im(:,:,4));
-
-% normalize the indices
-norm_ndwi = imnorm(ndwi);
-norm_ndsi = imnorm(ndsi);
-norm_mndwi = imnorm(mndwi);
+    getIndices(im_adj(:,:,1), im_adj(:,:,2), ...
+    im_adj(:,:,3), im_adj(:,:,4));
 
 % get the data into a single "image"
 img_data(:,:,1) = ndwi;
 img_data(:,:,2) = ndsi;
 img_data(:,:,3) = mndwi;
-img_data(:,:,4) = abs(gradient(im(:,:,5)));
+img_data(:,:,4) = abs(gradient(im_adj(:,:,5)));
 
 
 %% Supervised machine learning ============================================
 % load labelled data. note that traceROI must have been called separately
-% before. call it using traceROI(im(:,:,1:3)) after the data been loaded
-load('Data/essai3/labelled_data/index_DEM.mat');
-load('Data/essai3/labelled_data/labels_DEM.mat');
+% before. call it using traceROI(im(:,:,2:4)) after the data been loaded
+load('Data/essai3/labelled_data/index_more_complete.mat');
+load('Data/essai3/labelled_data/labels_more_complete.mat');
 
 classMap = supervisedLearning(img_data, index, labels);
 
 
 %% Classify the image =====================================================
 
-% get the lakes on the image
+% manually get the lakes on the image
 lakes = findLakes(ndwi, [0.05,0.75], ...
     ndsi, [-1, 2], mndwi, [-1, 2], ...
     1, [-1, 2]);
@@ -85,5 +89,5 @@ lakes = findLakes(ndwi, [0.05,0.75], ...
 plotIndices(ndwi, ndsi, mndwi, refmat{3});
 
 % plot the lakes on the given map
-plotOverlay(im(:,:,1:3), classMap, refmat{3}, 0.75, ...
+plotOverlay(im_adj(:,:,2:4), classMap, refmat{3}, 0.75, ...
     'Original image (B 3-5)')

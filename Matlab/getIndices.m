@@ -20,5 +20,10 @@ NDWI = (NIR - SWIR) ./ (NIR + SWIR);
 NDSI = (SWIR - R) ./ (SWIR + R);
 MNDWI = (G - SWIR) ./ (G + SWIR);
 
+% remove NaNs from division by zero errors
+NDWI(isnan(NDWI)) = 0;
+NDSI(isnan(NDSI)) = 0;
+MNDWI(isnan(MNDWI)) = 0;
+
 end
 
