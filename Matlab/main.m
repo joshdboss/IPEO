@@ -4,7 +4,7 @@
 % Project title:
 % Glacier retreat in the Himalayas and implications for local populations
 % Authors: Loïc Brouet, Joshua Cayetano-Emond
-% SCIPER NUMBER: xxxxxxx, 309043
+% SCIPER NUMBER: 266712, 309043
 % Date: 2020-12-15
 
 
@@ -37,7 +37,7 @@ file_DEM = 'Data/essai3/DEM/DEM_raw.tiff';
 [im(:,:,2:4), refmat{2}] = loadImage(file_456);
 [im_DEM, refmat{3}] = loadImage(file_DEM);
 % resize image to be of same size as DEM. quite naive, probably better way
-% to do this in the future...
+% to do this in the future... : faire panshapening
 im = imresize(im, size(im_DEM));
 
 
@@ -81,6 +81,7 @@ lakes = findLakes(ndwi, [0.05,0.75], ...
     ndsi, [-1, 2], mndwi, [-1, 2], ...
     1, [-1, 2]);
     %imnorm(abs(gradient(im(:,:,5)))), [-1, 0.01]);
+    %imnorm(img_data(:,:,4)), [-1, 0.01]);
 
 
 %% Plot everything ========================================================

@@ -4,7 +4,7 @@
 % Project title:
 % Glacier retreat in the Himalayas and implications for local populations
 % Authors: Loïc Brouet, Joshua Cayetano-Emond
-% SCIPER NUMBER: xxxxxxx, 309043
+% SCIPER NUMBER: 266712, 309043
 % Date: 2020-12-15
 
 
@@ -28,9 +28,9 @@ imnorm = @(x) (x - min(x(:))) ./ (max(x(:)) - min(x(:)));
 
 %% Load data ==============================================================
 % Image. has band 3, 4, 5 and 6 as well as DEM
-file_3 = 'Images/essai3/2020-10-20-L8_B03.tiff';
-file_456 = 'Images/essai3/2020-10-20-L8_B456.tiff';
-file_DEM = 'Images/essai3/DEM/DEM_raw.tiff';
+file_3 = 'Data/essai3/2020-10-20-L8_B03.tiff';
+file_456 = 'Data/essai3/2020-10-20-L8_B456.tiff';
+file_DEM = 'Data/essai3/DEM/DEM_raw.tiff';
 
 % read landsat image
 [im(:,:,1), refmat{1}] = loadImage(file_3);
@@ -58,54 +58,16 @@ norm_mndwi = imnorm(mndwi);
 img_data(:,:,1) = ndwi;
 img_data(:,:,2) = ndsi;
 img_data(:,:,3) = mndwi;
-mod_img(:,:,4) = abs(gradient(im(:,:,5)));
+img_data(:,:,4) = abs(gradient(im(:,:,5)));
 
 
 %% Supervised machine learning ============================================
 % load labelled data. note that traceROI must have been called separately
 % before. call it using traceROI(im(:,:,1:3)) after the data been loaded
-load('index_DEM.mat');
-load('labels_DEM.mat');
+load('Data/essai3/labelled_data/index_DEM.mat');
+load('Data/essai3/labelled_data/labels_DEM.mat');
 
-% Reshape the data into a 2d matrix
-data = reshape(img_data,size(img_data,1)*size(img_data,2),size(img_data,3));
-
-% Get pixels from each class mask (polygons)
-data_roi = data(cell2mat(index),:);
- 
-% concatenate the vector of labels
-label_roi = [];
-
-for c = 1:length(labels) % for each polygon
-    % Create a vector with the label of the polygon class.
-    label_roi = [label_roi; repmat(labels(c),size(index{c},1),1)];
-end
-
-% Split into training and testing samples to evaluate performances
-trainID = 1:10:length(label_roi);
-testID = setdiff(1:length(label_roi),trainID);
-
-% Subsample the training and the validation (test) data + labels
-data_train = data_roi(trainID,:);
-label_train = label_roi(trainID);
-
-data_valid = data_roi(testID,:);
-label_valid = label_roi(testID);
-
-typeNorm = 'std'; % use 'std' to rescale to a unit variance and zero mean
-[data_train_sc, dataMax, dataMin] = classificationScaling(double(data_train), [], [], typeNorm);
-
-% Rescale accordingly all image pixels
-% note: the parameters used on the training pixels are given as arguments in the
-% function to rescale accordingly the rest of the pixels
-data_sc = classificationScaling(double(data), dataMax, dataMin, typeNorm);
-
-% The same for the validation pixels
-data_valid_sc = classificationScaling(double(data_valid), dataMax, dataMin, typeNorm);
-
-class_gml = classify(data_sc, data_train_sc, label_train, 'linear');
-lake_mask = reshape(class_gml,size(img_data,1),size(img_data,2));
-lake_mask(lake_mask ~=1) = 0;
+classMap = supervisedLearning(img_data, index, labels);
 
 
 %% Classify the image =====================================================
@@ -115,6 +77,7 @@ lakes = findLakes(ndwi, [0.05,0.75], ...
     ndsi, [-1, 2], mndwi, [-1, 2], ...
     1, [-1, 2]);
     %imnorm(abs(gradient(im(:,:,5)))), [-1, 0.01]);
+    % imnorm(img_data(:,:,4)
 
 
 %% Plot everything ========================================================
@@ -123,5 +86,5 @@ lakes = findLakes(ndwi, [0.05,0.75], ...
 plotIndices(ndwi, ndsi, mndwi, refmat{3});
 
 % plot the lakes on the given map
-plotOverlay(im(:,:,1:3), lake_mask, refmat{3}, 0.5, ...
+plotOverlay(im(:,:,1:3), classMap, refmat{3}, 0.75, ...
     'Original image (B 3-5)')
