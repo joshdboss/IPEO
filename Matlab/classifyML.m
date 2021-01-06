@@ -1,12 +1,16 @@
-function classMap = classifyML(unkImage, trainedData, trainedLabels, ...
-    dataMax, dataMin)
-%Classifies the given dataset using a known labelled dataset
-%   Using a known labelled image, classify an unknown image. First
+function [classMap, accuracy] = classifyML(classImage, classLabels, ...
+    reshp, trainedData, trainedLabels, dataMax, dataMin)
+%Classifies the given image using a known labelled dataset
+%   Using a known labelled image, classify another image. First
 %   starts by putting the unknown image in the right format, scales it
 %   and then performs the machine learning classification.
 %
 %INPUTS
-%   unkImage (M x N): The unlabelled, unknown image to classify
+%   classImage (M x N): The image to classify
+%   classLabels (M x N): If known, the labels of the image
+%   reshp (boolean): Whether or not to reshape the matrix. This should be
+%   false for the validation data which is already reshaped, and true for
+%   any other case
 %   trainedData : The data of the pixels that have already been trained.
 %       This data should already be prepared in the right format.
 %   trainedLabels : The labels for each of the pixels in trainedData
@@ -15,16 +19,34 @@ function classMap = classifyML(unkImage, trainedData, trainedLabels, ...
 %
 %OUTPUTS
 %   classMap (M x N): The labels of each of the pixels on the image
+%   accuracy (float) : accuracy of the model, if labels given
 
-% Reshape the image into a 2d matrix
-data = reshape(unkImage, size(unkImage,1)*size(unkImage,2), ...
-    size(unkImage,3));
+
+% Reshape the image into a 2d matrix if desired
+if reshp
+    data = reshape(classImage, size(classImage,1)*size(classImage,2), ...
+        size(classImage,3));
+else
+    data = classImage;
+end
+
 % Rescale the data according to how the labelled data was scaled
 data_sc = classificationScaling(double(data), dataMax, dataMin, 'std');
 % Classify the image
 classMap = classify(data_sc, trainedData, trainedLabels, 'linear');
-% Reshape the classMap back into the shape of the image
-classMap = reshape(classMap,size(unkImage,1),size(unkImage,2));
+
+% Reshape the classMap back into the shape of the image if desired
+if reshp
+    classMap = reshape(classMap,size(classImage,1),size(classImage,2));
+end
+
+% if there are labels, compute the accuracy
+if ~all(isnan(classLabels),'all')
+    C = confusionmat(classLabels, classMap);
+    accuracy = sum(diag(C)) / sum(C,'all');
+else
+    accuracy = NaN;
+end
 
 end
 
