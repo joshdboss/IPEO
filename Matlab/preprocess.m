@@ -29,11 +29,16 @@ for i = 1:size(rawImage,3)-1
                     [0.01 0.99]), [0,1], gamma);
 end
 
+% isolate the bands for verbosity
+green_band = adjusted_bands(:,:,2);
+red_band = adjusted_bands(:,:,3);
+nir_band = adjusted_bands(:,:,4);
+swir_band = adjusted_bands(:,:,5);
+
 
 % Step 2. Get the water and snow indices from the bands
 [ndwi, ndsi, mndwi] = ...
-    getIndices(adjusted_bands(:,:,1), adjusted_bands(:,:,2), ...
-    adjusted_bands(:,:,3), adjusted_bands(:,:,4));
+    getIndices(green_band, red_band, nir_band, swir_band);
 
 
 % Step 3. Filter the DEM
@@ -50,8 +55,7 @@ filtered_DEM = imfilter(rawImage(:,:,end),h3);
 imageMetrics(:,:,1) = ndwi;
 imageMetrics(:,:,2) = ndsi;
 imageMetrics(:,:,3) = mndwi;
-imageMetrics(:,:,4:5) = adjusted_bands(:,:,2:3);
-imageMetrics(:,:,6) = slope;
+imageMetrics(:,:,4) = slope;
 
 end
 

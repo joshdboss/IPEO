@@ -23,20 +23,24 @@ set(groot,'defaultfigureposition',[400 100 1000 400])
 pixelSize = 19; % pixel size in meters
 
 % Location of the labelled data
-indices_file = 'Data/zone1/index_better.mat';
-labels_file = 'Data/zone1/labels_better.mat';
+indices_file = 'Data/zone1/index_justlakes.mat';
+labels_file = 'Data/zone1/labels_justlakes.mat';
 
 % File names for the reference image.
 % The reference image is ALWAYS the first element in the imagData variable
 imgData(1).blue_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B02.tiff';
 imgData(1).green_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B03.tiff';
-imgData(1).red_nir_swir_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B48A11.tiff';
+imgData(1).red_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B04.tiff';
+imgData(1).nir_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B08A.tiff';
+imgData(1).swir_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B11.tiff';
 imgData(1).DEM_file = 'Data/zone1/2020/DEM_WGS84/DEM_raw.tiff';
 imgData(1).name = 'Zone 1 (2020)';
 
 imgData(2).blue_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B02.tiff';
 imgData(2).green_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B03.tiff';
-imgData(2).red_nir_swir_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B456.tiff';
+imgData(2).red_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B04.tiff';
+imgData(2).nir_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B05.tiff';
+imgData(2).swir_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B06.tiff';
 imgData(2).DEM_file = 'Data/zone1/2014/DEM_WGS84/DEM_raw.tiff';
 imgData(2).name = 'Zone 1 (2014)';
 
@@ -58,10 +62,12 @@ imnorm = @(x) (x - min(x(:))) ./ (max(x(:)) - min(x(:)));
 % % section to manual label the data. Do not forget to save the "index" and
 % % "labels" variables!
 % [refImage, ~] = loadImage(imgData(1).blue_file, ...
-%                           imgData(1).green_file, ...
-%                           imgData(1).red_nir_swir_file, ...
-%                           imgData(1).DEM_file);
-% traceROI(refImage(:,:,[3:5]));
+%                   imgData(1).green_file, ...
+%                   imgData(1).red_file, ...
+%                   imgData(1).nir_file, ...
+%                   imgData(1).swir_file, ...
+%                   imgData(1).DEM_file);
+% traceROI(refImage(:,:,[3,2,1]));
 
 
 %% Load labelled data =====================================================
@@ -82,7 +88,9 @@ for i = 1:length(imgData)
     [imgData(i).rawImage, imgData(i).refInfo, imgData(i).refMatrix] = ...
         loadImage(imgData(i).blue_file, ...
                   imgData(i).green_file, ...
-                  imgData(i).red_nir_swir_file, ...
+                  imgData(i).red_file, ...
+                  imgData(i).nir_file, ...
+                  imgData(i).swir_file, ...
                   imgData(i).DEM_file);
     fprintf('Bands and DEM loaded.\n');
     
@@ -143,7 +151,7 @@ for i = 1:length(imgData)
     imgData(i).averageLakeArea = imgData(i).lakeArea / imgData(i).numLakes;
         
     % Plot everything
-    plotOverlay(imgData(i).rawImage(:,:,[3:5]), ...
+    plotOverlay(imgData(i).rawImage(:,:,[3,2,1]), ...
         imgData(i).processedLakes, imgData(i).refMatrix, ...
         0.75, imgData(i).name)
     
