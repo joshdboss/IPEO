@@ -42,6 +42,13 @@ zone1_2014ImageFile456 = 'Data/zone1/2014-10-04-L8_B456.tiff';
 [zone1_2014Image, zone1_2014Matrix] = loadImage(zone1_2014ImageFile3, ...
     zone1_2014ImageFile456, 1, refImageFileDEM);
 
+% Zone 2 in 2020
+zone2_2020ImageFile3 = 'Data/zone2/2020-10-22-L8_B03.tiff';
+zone2_2020ImageFile456 = 'Data/zone2/2020-10-22-L8_B456.tiff';
+zone2_2020ImageFileDEM = 'Data/zone2/DEMzone2/DEM_raw.tiff';
+[zone2_2020Image, zone2_2020Matrix] = loadImage(zone2_2020ImageFile3, ...
+    zone2_2020ImageFile456, 1, zone2_2020ImageFileDEM);
+
 
 %% Preprocess the data ====================================================
 % Zone 1 2020
@@ -53,6 +60,11 @@ refImageData = preprocess(refImage, refImagePixelSize);
 zone1_2014PixelSize = (zone1_2014Matrix.CellExtentInWorldX ...
     + zone1_2014Matrix.CellExtentInWorldY)/2;
 zone1_2014ImageData = preprocess(zone1_2014Image, zone1_2014PixelSize);
+
+% Zone 2 2020
+zone2_2020PixelSize = (zone2_2020Matrix.CellExtentInWorldX ...
+    + zone2_2020Matrix.CellExtentInWorldY)/2;
+zone2_2020ImageData = preprocess(zone2_2020Image, zone2_2020PixelSize);
 
 
 %% Histogram matching =====================================================
@@ -66,15 +78,24 @@ zone1_2014ImageData = preprocess(zone1_2014Image, zone1_2014PixelSize);
 load('Data/zone1/labelled_data/index_more_complete.mat');
 load('Data/zone1/labelled_data/labels_more_complete.mat');
 
-% Train the model
+% Prepare the data
+[data_train_sc, label_train, data_valid_sc, label_valid, dataMax, dataMin] = ...
+    prepareML(refImageData, index, labels);
 
 % Classify the images
-refImageClassMap = supervisedLearning(refImageData, index, labels);
+refImageClassMap = classifyML(refImageData, data_train_sc, label_train, ...
+    dataMax, dataMin);
+zone1_2014ClassMap = classifyML(zone1_2014ImageData, data_train_sc, ...
+    label_train, dataMax, dataMin);
+zone2_2020ClassMap = classifyML(zone2_2020ImageData, data_train_sc, ...
+    label_train, dataMax, dataMin);
 
 % There are multiple classes in the labelled data to help the model to work
 % better. However, only the lakes (label 1) are of interest
 % Therefore, discard the other classes.
 refImageLakes = refImageClassMap == 1;
+zone1_2014Lakes = zone1_2014ClassMap == 1;
+zone2_2020Lakes = zone2_2020ClassMap == 1;
 
 % Remove lake pixels with a sloper that's too high. Removed
 % refImageLakes = slope(refImageLakes) < 10;
@@ -89,54 +110,15 @@ refImageLakes = refImageClassMap == 1;
 %% Post-processing ========================================================
 
 refImageProcessedLakes = postprocess(refImageLakes);
+zone1_2014ProcessedLakes = postprocess(zone1_2014Lakes);
+zone2_2020ProcessedLakes = postprocess(zone2_2020Lakes);
 
 
 %% Plot everything ========================================================
 
-% plot the images
-%plotIndices(ndwi, ndsi, mndwi, refmat{3});
-
-% plot the lakes on the given map
-% plotOverlay(im_adj(:,:,2:4), classMap==1, refmat{3}, 0.75, ...
-%     'Original image (B 3-5)')
-% 
-% plotOverlay(im_adj(:,:,2:4), Im_cr, refmat{3}, 0.75, ...
-%     'Morphology')
-
 plotOverlay(refImage(:,:,2:4), refImageProcessedLakes, refImageMatrix, ...
     0.75, 'Zone 1 (2020)')
-
-
-% %% Plot other stuff
-% figure
-% set(gcf,'Position',[100 -100 900 600])
-% for i = 1:4
-%     subplot(2,2,i);
-%     mapshow(im(:,:,i), refmat{3})
-%     axis equal tight
-%     xlabel('Easting [m]')
-%     ylabel('Northing [m]')
-%     title(sprintf('Original Image. Band %d', i));
-% end
-% 
-% figure
-% set(gcf,'Position',[100 -100 900 600])
-% for i = 1:4
-%     subplot(2,2,i);
-%     mapshow(im_adj(:,:,i), refmat{3})
-%     axis equal tight
-%     xlabel('Easting [m]')
-%     ylabel('Northing [m]')
-%     title(sprintf('Adjusted Image. Band %d', i));
-% end
-% 
-% figure
-% set(gcf,'Position',[100 -100 900 600])
-% for i = 1:4
-%     subplot(2,2,i);
-%     mapshow(imnorm(l8_mat_hp7(:,:,i)), refmat{3})
-%     axis equal tight
-%     xlabel('Easting [m]')
-%     ylabel('Northing [m]')
-%     title(sprintf('Filtered Image. Band %d', i));
-% end
+plotOverlay(zone1_2014Image(:,:,2:4), zone1_2014ProcessedLakes, zone1_2014Matrix, ...
+    0.75, 'Zone 1 (2014)')
+plotOverlay(zone2_2020Image(:,:,2:4), zone2_2020ProcessedLakes, zone2_2020Matrix, ...
+    0.75, 'Zone 2 (2020)')
