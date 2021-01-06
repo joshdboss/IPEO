@@ -20,105 +20,91 @@ set(groot,'defaultfigureposition',[400 100 1000 400])
 
 
 %% Define variables =======================================================
-% Load any relevant variables here
+% Location of the labelled data
+indices_file = 'Data/zone1/labelled_data/index_more_complete.mat';
+labels_file = 'Data/zone1/labelled_data/labels_more_complete.mat';
+
+% File names for the reference image.
+% The reference image is ALWAYS the first element in the imagData variable
+imgData(1).band3_file = 'Data/zone1/2020-10-20-L8_B03.tiff';
+imgData(1).bands456_file = 'Data/zone1/2020-10-20-L8_B456.tiff';
+imgData(1).DEM_file = 'Data/zone1/DEM/DEM_raw.tiff';
+imgData(1).name = 'Zone 1 (2020)';
+
+imgData(2).band3_file = 'Data/zone1/2014-10-04-L8_B03.tiff';
+imgData(2).bands456_file = 'Data/zone1/2014-10-04-L8_B456.tiff';
+imgData(2).DEM_file = 'Data/zone1/DEM/DEM_raw.tiff'; % DEM doesn't change
+imgData(2).name = 'Zone 1 (2014)';
+
+imgData(3).band3_file = 'Data/zone2/2020-10-22-L8_B03.tiff';
+imgData(3).bands456_file = 'Data/zone2/2020-10-22-L8_B456.tiff';
+imgData(3).DEM_file = 'Data/zone2/DEMzone2/DEM_raw.tiff';
+imgData(3).name = 'Zone 2 (2020)';
 
 
 %% Define functions =======================================================
 imnorm = @(x) (x - min(x(:))) ./ (max(x(:)) - min(x(:)));
 
 
-%% Load data ==============================================================
-% Reference labelled image - Zone 1 in 2020
-refImageFile3 = 'Data/zone1/2020-10-20-L8_B03.tiff';
-refImageFile456 = 'Data/zone1/2020-10-20-L8_B456.tiff';
-refImageFileDEM = 'Data/zone1/DEM/DEM_raw.tiff';
-[refImage, refImageMatrix] = loadImage(refImageFile3, refImageFile456, ...
-    1, refImageFileDEM);
-
-% Older image - Zone 1 in 2014
-zone1_2014ImageFile3 = 'Data/zone1/2014-10-04-L8_B03.tiff';
-zone1_2014ImageFile456 = 'Data/zone1/2014-10-04-L8_B456.tiff';
-% Get the image. Uses same DEM as it doesn't exactly change much...
-[zone1_2014Image, zone1_2014Matrix] = loadImage(zone1_2014ImageFile3, ...
-    zone1_2014ImageFile456, 1, refImageFileDEM);
-
-% Zone 2 in 2020
-zone2_2020ImageFile3 = 'Data/zone2/2020-10-22-L8_B03.tiff';
-zone2_2020ImageFile456 = 'Data/zone2/2020-10-22-L8_B456.tiff';
-zone2_2020ImageFileDEM = 'Data/zone2/DEMzone2/DEM_raw.tiff';
-[zone2_2020Image, zone2_2020Matrix] = loadImage(zone2_2020ImageFile3, ...
-    zone2_2020ImageFile456, 1, zone2_2020ImageFileDEM);
+% %% Label data =============================================================
+% % Label the data on the given region
+% % This section is commented since the labelROI function is quite buggy
+% % and labelling should be done beforehand.
+% % Uncomment and run this section after having run the "Define variables"
+% % section to manual label the data. Do not forget to save the "index" and
+% % "labels" variables!
+% [refImage, ~] = loadImage(refImageFile3, refImageFile456, ...
+%     1, refImageFileDEM);
+% traceROI(refImage(:,:,2:4));
 
 
-%% Preprocess the data ====================================================
-% Zone 1 2020
-refImagePixelSize = (refImageMatrix.CellExtentInWorldX ...
-    + refImageMatrix.CellExtentInWorldY)/2;
-refImageData = preprocess(refImage, refImagePixelSize);
-
-% Zone 1 2014
-zone1_2014PixelSize = (zone1_2014Matrix.CellExtentInWorldX ...
-    + zone1_2014Matrix.CellExtentInWorldY)/2;
-zone1_2014ImageData = preprocess(zone1_2014Image, zone1_2014PixelSize);
-
-% Zone 2 2020
-zone2_2020PixelSize = (zone2_2020Matrix.CellExtentInWorldX ...
-    + zone2_2020Matrix.CellExtentInWorldY)/2;
-zone2_2020ImageData = preprocess(zone2_2020Image, zone2_2020PixelSize);
+%% Load labelled data =====================================================
+% Data must have already been labelled. See above section to manually label
+% the data.
+load(indices_file);
+load(labels_file);
 
 
-%% Histogram matching =====================================================
-% If we have time and ML results not good for other images, perform
-% histogram matching between other images and the reference image
+%% Loop through all images and find the lakes! ============================
 
-
-%% Machine learning =======================================================
-% Load labelled data. note that traceROI must be called separately before.
-% Call it using traceROI(refImage(:,:,2:4)) after the data been loaded
-load('Data/zone1/labelled_data/index_more_complete.mat');
-load('Data/zone1/labelled_data/labels_more_complete.mat');
-
-% Prepare the data
-[data_train_sc, label_train, data_valid_sc, label_valid, dataMax, dataMin] = ...
-    prepareML(refImageData, index, labels);
-
-% Classify the images
-refImageClassMap = classifyML(refImageData, data_train_sc, label_train, ...
-    dataMax, dataMin);
-zone1_2014ClassMap = classifyML(zone1_2014ImageData, data_train_sc, ...
-    label_train, dataMax, dataMin);
-zone2_2020ClassMap = classifyML(zone2_2020ImageData, data_train_sc, ...
-    label_train, dataMax, dataMin);
-
-% There are multiple classes in the labelled data to help the model to work
-% better. However, only the lakes (label 1) are of interest
-% Therefore, discard the other classes.
-refImageLakes = refImageClassMap == 1;
-zone1_2014Lakes = zone1_2014ClassMap == 1;
-zone2_2020Lakes = zone2_2020ClassMap == 1;
-
-% Remove lake pixels with a sloper that's too high. Removed
-% refImageLakes = slope(refImageLakes) < 10;
-
-
-% % Alternatively, manually get the lakes on the image. Removed
-% lakes = findLakes(refImageData(:,:,1), [0.05,0.75], ...
-%     refImageData(:,:,2), [-1, 2], refImageData(:,:,3), [-1, 2], ...
-%     refImageData(:,:,end), [-1, 0.01]);
-
+for i = 1:length(imgData)
+    % Load the image
+    [imgData(i).rawImage, imgData(i).refMatrix] = ...
+        loadImage(imgData(i).band3_file, imgData(i).bands456_file, ...
+        1, imgData(i).DEM_file);
     
-%% Post-processing ========================================================
+    % Preprocess the data
+    imgData(i).PixelSize = (imgData(i).refMatrix.CellExtentInWorldX ...
+    + imgData(i).refMatrix.CellExtentInWorldY)/2; % get the pixel size
+    imgData(i).preprocessedData = preprocess(imgData(i).rawImage, ...
+        imgData(i).PixelSize);
+    
+    % for images that are not the reference image
+    if i ~= 1
+        % perform histogram matching
+    end
+    
+    % prepare the machine learning data with the reference image
+    if i == 1
+        [data_train_sc, label_train, data_valid_sc, label_valid, ...
+            dataMax, dataMin] = prepareML(imgData(i).preprocessedData, ...
+            index, labels);
+    end
+    
+    % Classify the images
+    imgData(i).classMap = classifyML(imgData(i).preprocessedData, ...
+        data_train_sc, label_train, dataMax, dataMin);
+    
+    % There are multiple classes in the labelled data to help the model
+    % work better. However, only the lakes (label 1) are of interest
+    % Therefore, discard the other classes.
+    imgData(i).lakes = imgData(i).classMap == 1;
+    
+    % Post process the data
+    imgData(i).processedLakes = postprocess(imgData(i).lakes);
+        
+    % Plot everything
+    plotOverlay(imgData(i).rawImage(:,:,2:4), imgData(i).processedLakes,...
+        imgData(i).refMatrix, 0.75, imgData(i).name)
 
-refImageProcessedLakes = postprocess(refImageLakes);
-zone1_2014ProcessedLakes = postprocess(zone1_2014Lakes);
-zone2_2020ProcessedLakes = postprocess(zone2_2020Lakes);
-
-
-%% Plot everything ========================================================
-
-plotOverlay(refImage(:,:,2:4), refImageProcessedLakes, refImageMatrix, ...
-    0.75, 'Zone 1 (2020)')
-plotOverlay(zone1_2014Image(:,:,2:4), zone1_2014ProcessedLakes, zone1_2014Matrix, ...
-    0.75, 'Zone 1 (2014)')
-plotOverlay(zone2_2020Image(:,:,2:4), zone2_2020ProcessedLakes, zone2_2020Matrix, ...
-    0.75, 'Zone 2 (2020)')
+end
