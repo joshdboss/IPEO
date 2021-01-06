@@ -128,6 +128,13 @@ for i = 1:length(imgData)
     fprintf('Post-processing the image classification.\n');
     imgData(i).processedLakes = postprocess(imgData(i).lakes);
     fprintf('Image classified.\n');
+    
+    % Get interesting data on the lakes
+    imgData(i).numLakes = length(regionprops(imgData(i).processedLakes));
+    imgData(i).lakeArea = ...
+        sum(cat(1, regionprops(imgData(i).processedLakes).Area)) ...
+        * imgData(i).PixelSize ^ 2;
+    imgData(i).averageLakeArea = imgData(i).lakeArea / imgData(i).numLakes;
         
     % Plot everything
     plotOverlay(imgData(i).rawImage(:,:,2:4), imgData(i).processedLakes,...
