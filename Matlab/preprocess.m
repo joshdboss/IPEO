@@ -1,4 +1,4 @@
-function [imageMetrics] = preprocess(rawImage, pixelSize)
+function [imageMetrics] = preprocess(rawImage, refMat)
 %Takes a raw image (bands 3-6 and DEM) and extracts the desired metrics
 %   Given a raw, pansharpened image with bands 3 to 6 and the DEM, extract
 %   the relevant indices that will allow proper lake identification. These
@@ -8,8 +8,7 @@ function [imageMetrics] = preprocess(rawImage, pixelSize)
 %INPUTS
 %   rawImage (M x N x 5): A pansharpened image containing bands 3-6
 %   and the DEM
-%   pixelSize (double): The size in meters of a pixel. Necessary to get
-%   slope
+%   refMat: Reference matrix of the image.
 %
 %OUTPUTS
 %   imageMetrics (M x N x 6): The relevant indices to allow proper lake
@@ -44,10 +43,7 @@ filtered_DEM = imfilter(rawImage(:,:,end),h3);
 
 
 % Step 4. Get the slope
-nauticalMile = 111120; % 1 nm = 1 degree = 111120 meters
-pixelsPerDegree = nauticalMile / pixelSize;
-gridrv = [pixelsPerDegree 0 0];
-[aspect,slope,gradN,gradE] = gradientm(filtered_DEM, gridrv);
+[aspect,slope,gradN,gradE] = gradientm(filtered_DEM, refMat);
 
 
 % Step 5. Assemble the matrix of the relevant image data to return
