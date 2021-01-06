@@ -20,26 +20,31 @@ set(groot,'defaultfigureposition',[400 100 1000 400])
 
 
 %% Define variables =======================================================
+pixelSize = 19; % pixel size in meters
+
 % Location of the labelled data
-indices_file = 'Data/zone1/labelled_data/index_more_complete.mat';
-labels_file = 'Data/zone1/labelled_data/labels_more_complete.mat';
+indices_file = 'Data/zone1/index_better.mat';
+labels_file = 'Data/zone1/labels_better.mat';
 
 % File names for the reference image.
 % The reference image is ALWAYS the first element in the imagData variable
-imgData(1).band3_file = 'Data/zone1/2020-10-20-L8_B03.tiff';
-imgData(1).bands456_file = 'Data/zone1/2020-10-20-L8_B456.tiff';
-imgData(1).DEM_file = 'Data/zone1/DEM/DEM_raw.tiff';
+imgData(1).blue_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B02.tiff';
+imgData(1).green_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B03.tiff';
+imgData(1).red_nir_swir_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B48A11.tiff';
+imgData(1).DEM_file = 'Data/zone1/2020/DEM_WGS84/DEM_raw.tiff';
 imgData(1).name = 'Zone 1 (2020)';
 
-imgData(2).band3_file = 'Data/zone1/2014-10-04-L8_B03.tiff';
-imgData(2).bands456_file = 'Data/zone1/2014-10-04-L8_B456.tiff';
-imgData(2).DEM_file = 'Data/zone1/DEM/DEM_raw.tiff'; % DEM doesn't change
+imgData(2).blue_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B02.tiff';
+imgData(2).green_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B03.tiff';
+imgData(2).red_nir_swir_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B456.tiff';
+imgData(2).DEM_file = 'Data/zone1/2014/DEM_WGS84/DEM_raw.tiff';
 imgData(2).name = 'Zone 1 (2014)';
 
-imgData(3).band3_file = 'Data/zone2/2020-10-22-L8_B03.tiff';
-imgData(3).bands456_file = 'Data/zone2/2020-10-22-L8_B456.tiff';
-imgData(3).DEM_file = 'Data/zone2/DEMzone2/DEM_raw.tiff';
-imgData(3).name = 'Zone 2 (2020)';
+% 
+% imgData(3).band3_file = 'Data/zone2/2020-10-22-L8_B03.tiff';
+% imgData(3).bands456_file = 'Data/zone2/2020-10-22-L8_B456.tiff';
+% imgData(3).DEM_file = 'Data/zone2/DEMzone2/DEM_raw.tiff';
+% imgData(3).name = 'Zone 2 (2020)';
 
 
 %% Define functions =======================================================
@@ -52,9 +57,11 @@ imnorm = @(x) (x - min(x(:))) ./ (max(x(:)) - min(x(:)));
 % % Uncomment and run this section after having run the "Define variables"
 % % section to manual label the data. Do not forget to save the "index" and
 % % "labels" variables!
-% [refImage, ~] = loadImage(refImageFile3, refImageFile456, ...
-%     1, refImageFileDEM);
-% traceROI(refImage(:,:,2:4));
+% [refImage, ~] = loadImage(imgData(1).blue_file, ...
+%                           imgData(1).green_file, ...
+%                           imgData(1).red_nir_swir_file, ...
+%                           imgData(1).DEM_file);
+% traceROI(refImage(:,:,[3:5]));
 
 
 %% Load labelled data =====================================================
@@ -72,17 +79,17 @@ for i = 1:length(imgData)
     
     % Load the image
     fprintf('Loading image bands and DEM.\n');
-    [imgData(i).rawImage, imgData(i).refMatrix] = ...
-        loadImage(imgData(i).band3_file, imgData(i).bands456_file, ...
-        1, imgData(i).DEM_file);
+    [imgData(i).rawImage, imgData(i).refInfo, imgData(i).refMatrix] = ...
+        loadImage(imgData(i).blue_file, ...
+                  imgData(i).green_file, ...
+                  imgData(i).red_nir_swir_file, ...
+                  imgData(i).DEM_file);
     fprintf('Bands and DEM loaded.\n');
     
     % Preprocess the data
     fprintf('Preprocessing the data.\n');
-    imgData(i).PixelSize = (imgData(i).refMatrix.CellExtentInWorldX ...
-    + imgData(i).refMatrix.CellExtentInWorldY)/2; % get the pixel size
     imgData(i).preprocessedData = preprocess(imgData(i).rawImage, ...
-        imgData(i).PixelSize);
+        imgData(i).refInfo);
     fprintf('Data preprocessed.\n');
     
     % for images that are not the reference image
@@ -132,159 +139,16 @@ for i = 1:length(imgData)
     imgData(i).numLakes = length(regionprops(imgData(i).processedLakes));
     imgData(i).lakeArea = ...
         sum(cat(1, regionprops(imgData(i).processedLakes).Area)) ...
-        * imgData(i).PixelSize ^ 2;
+        * pixelSize ^ 2;
     imgData(i).averageLakeArea = imgData(i).lakeArea / imgData(i).numLakes;
         
     % Plot everything
-    plotOverlay(imgData(i).rawImage(:,:,2:4), imgData(i).processedLakes,...
-        imgData(i).refMatrix, 0.75, imgData(i).name)
+    plotOverlay(imgData(i).rawImage(:,:,[3:5]), ...
+        imgData(i).processedLakes, imgData(i).refMatrix, ...
+        0.75, imgData(i).name)
     
 
+    fprintf('DONE WITH IMAGE %s\n', imgData(i).name)
 
 end
-
-%% Load data ==============================================================
-% Image. has band 3, 4, 5 and 6 as well as DEM
-file_3 = 'Data/essai3/2020-10-20-L8_B03.tiff';
-file_456 = 'Data/essai3/2020-10-20-L8_B456.tiff';
-file_DEM = 'Data/essai3/DEM/DEM_raw.tiff';
-
-% read landsat image
-[im(:,:,1), refmat{1}] = readgeoraster(file_3);
-[im(:,:,2:4), refmat{2}] = readgeoraster(file_456);
-[im_DEM, refmat{3}] = readgeoraster(file_DEM);
-% resize image to be of same size as DEM. quite naive, probably better way
-% to do this in the future... : faire panshapening
-im = imresize(im, size(im_DEM));
-
-
-%% Preprocess the data ====================================================
-
-% increase contrast
-im_adj = zeros(size(im)); %pre-allocate matrix for speed
-gamma = 1;
-for i = 1:size(im,3)
-    im_band = im(:,:,i);
-    im_adj(:,:,i) = imadjust(im_band, stretchlim(im_band(im_band ~= 0), ...
-                    [0.01 0.99]), [0,1], gamma);
-end
-
-% filter the DEM and add it to the adjusted image
-sigma = 2;
-h3 = fspecial('gaussian', 3, sigma);
-filtered_DEM = imfilter(im_DEM,h3);
-im_adj(:,:,5) = filtered_DEM;
-
-% put the images in a double
-im = im2double(im);
-im_adj = im2double(im_adj);
-
-% get the slope using Horn's formula. Still doesn't get actual angle of
-% slope since the height is not interpolated properly. Better than nothing
-% I guess
-R = 19; % resolution of the DEM [m]
-G_filter = [[-1, 0, 1]; [-2, 0, 2]; [1, 0, 1]] / (8*R);
-H_filter = [[-1, -2, -1]; [0, 0, 0]; [1, 2, 1]] / (8*R);
-DEM_G = imfilter(im_DEM,G_filter);
-DEM_H = imfilter(im_DEM,H_filter);
-slope = sqrt(DEM_G.^2 + DEM_H.^2);
-
-% get the relevant indices
-[ndwi, ndsi, mndwi] = ...
-    getIndices(im_adj(:,:,1), im_adj(:,:,2), ...
-    im_adj(:,:,3), im_adj(:,:,4));
-
-% get the data into a single "image" that will be used for ML
-img_data(:,:,1) = ndwi;
-img_data(:,:,2) = ndsi;
-img_data(:,:,3) = mndwi;
-img_data(:,:,4) = slope;
-
-
-%% Supervised machine learning ============================================
-% load labelled data. note that traceROI must have been called separately
-% before. call it using traceROI(im(:,:,2:4)) after the data been loaded
-load('Data/essai3/labelled_data/index_more_complete.mat');
-load('Data/essai3/labelled_data/labels_more_complete.mat');
-
-classMap = supervisedLearning(img_data, index, labels);
-
-
-%% Classify the image =====================================================
-
-% manually get the lakes on the image
-lakes = findLakes(ndwi, [0.05,0.75], ...
-    ndsi, [-1, 2], mndwi, [-1, 2], ...
-    1, [-1, 2]);
-    %imnorm(abs(gradient(im(:,:,5)))), [-1, 0.01]);
-    %imnorm(img_data(:,:,4)), [-1, 0.01]);
-
-%% Morphology fill in gaps and remove small lakes =========================
-
-SE = strel('disk',5); % 'diamond' 'square'
-im_uint8 = uint8(255 * mat2gray(classMap == 1));
-
-% Performing Erosion
-Im_e = imerode(im_uint8,SE);
-% Performing Dilation
-Im_d = imdilate(im_uint8,SE);
-
-% reconstructive closing
-Im_cr = imcomplement(imreconstruct(imcomplement(Im_d), ...
- imcomplement(im_uint8)));
-
-% remove lakes smaller than the threshold
-minimum_lake_size = 4;
-%l = bwareaopen(Im_cr,minimum_lake_size);
-removed = bwareaopen(Im_cr,minimum_lake_size);
-%% Plot everything ========================================================
-
-% plot the images
-plotIndices(ndwi, ndsi, mndwi, refmat{3});
-
-% plot the lakes on the given map
-% plotOverlay(im_adj(:,:,2:4), classMap==1, refmat{3}, 0.75, ...
-%     'Original image (B 3-5)')
-% 
-% plotOverlay(im_adj(:,:,2:4), Im_cr, refmat{3}, 0.75, ...
-%     'Morphology')
-
-plotOverlay(im_adj(:,:,2:4), removed, refmat{3}, 0.75, ...
-    'Small lakes removed')
-
-
-%%% Plot other stuff
-% figure
-% set(gcf,'Position',[100 -100 900 600])
-% for i = 1:4
-%     subplot(2,2,i);
-%     mapshow(im(:,:,i), refmat{3})
-%     axis equal tight
-%     xlabel('Easting [m]')
-%     ylabel('Northing [m]')
-%     title(sprintf('Original Image. Band %d', i));
-% end
-% 
-% figure
-% set(gcf,'Position',[100 -100 900 600])
-% for i = 1:4
-%     subplot(2,2,i);
-%     mapshow(im_adj(:,:,i), refmat{3})
-%     axis equal tight
-%     xlabel('Easting [m]')
-%     ylabel('Northing [m]')
-%     title(sprintf('Adjusted Image. Band %d', i));
-% end
-% 
-% figure
-% set(gcf,'Position',[100 -100 900 600])
-% for i = 1:4
-%     subplot(2,2,i);
-%     mapshow(imnorm(l8_mat_hp7(:,:,i)), refmat{3})
-%     axis equal tight
-%     xlabel('Easting [m]')
-%     ylabel('Northing [m]')
-%     title(sprintf('Filtered Image. Band %d', i));
-% end
-fprintf('DONE WITH IMAGE %s\n', imgData(i).name);
 
