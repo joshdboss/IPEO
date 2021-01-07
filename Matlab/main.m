@@ -23,10 +23,10 @@ set(groot,'defaultfigureposition',[400 100 1000 400])
 % pixel size in meters. obtained from the reference matrix of the DEM
 pixelSize = 19.57;
 
-% % Location of the labelled data
+% Location of the labelled data
 indices_file = 'Data/zone1/index_better.mat';
 labels_file = 'Data/zone1/labels_better.mat';
-
+    
 % File names for the reference image.
 % The reference image is ALWAYS the first element in the imagData variable
 imgData(1).blue_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B02.tiff';
@@ -34,22 +34,62 @@ imgData(1).green_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B03.tiff';
 imgData(1).red_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B04.tiff';
 imgData(1).nir_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B08A.tiff';
 imgData(1).swir_file = 'Data/zone1/2020/S2_WGS84/2020-10-29-S2_B11.tiff';
-imgData(1).DEM_file = 'Data/zone1/2020/DEM_WGS84/DEM_raw.tiff';
+imgData(1).DEM_file = 'Data/zone1/DEM_2015/DEM_raw.tiff';
 imgData(1).name = 'Zone 1 (2020)';
 
+% 2014. Landsat
 imgData(2).blue_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B02.tiff';
 imgData(2).green_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B03.tiff';
 imgData(2).red_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B04.tiff';
 imgData(2).nir_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B05.tiff';
 imgData(2).swir_file = 'Data/zone1/2014/L8_WGS84/2014-10-04-L8_B06.tiff';
-imgData(2).DEM_file = 'Data/zone1/2014/DEM_WGS84/DEM_raw.tiff';
+imgData(2).DEM_file = 'Data/zone1/DEM_2015/DEM_raw.tiff';
 imgData(2).name = 'Zone 1 (2014)';
 
-% 
-% imgData(3).band3_file = 'Data/zone2/2020-10-22-L8_B03.tiff';
-% imgData(3).bands456_file = 'Data/zone2/2020-10-22-L8_B456.tiff';
-% imgData(3).DEM_file = 'Data/zone2/DEMzone2/DEM_raw.tiff';
-% imgData(3).name = 'Zone 2 (2020)';
+% 2015. Landsat
+imgData(3).blue_file = 'Data/zone1/2015/L8_WGS84/2015-10-07-L8_B02.tiff';
+imgData(3).green_file = 'Data/zone1/2015/L8_WGS84/2015-10-07-L8_B03.tiff';
+imgData(3).red_file = 'Data/zone1/2015/L8_WGS84/2015-10-07-L8_B04.tiff';
+imgData(3).nir_file = 'Data/zone1/2015/L8_WGS84/2015-10-07-L8_B05.tiff';
+imgData(3).swir_file = 'Data/zone1/2015/L8_WGS84/2015-10-07-L8_B06.tiff';
+imgData(3).DEM_file = 'Data/zone1/DEM_2015/DEM_raw.tiff';
+imgData(3).name = 'Zone 1 (2015)';
+
+% 2016. Landsat
+imgData(4).blue_file = 'Data/zone1/2016/L8_WGS84/2016-10-18-L8_B02.tiff';
+imgData(4).green_file = 'Data/zone1/2016/L8_WGS84/2016-10-18-L8_B03.tiff';
+imgData(4).red_file = 'Data/zone1/2016/L8_WGS84/2016-10-18-L8_B04.tiff';
+imgData(4).nir_file = 'Data/zone1/2016/L8_WGS84/2016-10-18-L8_B05.tiff';
+imgData(4).swir_file = 'Data/zone1/2016/L8_WGS84/2016-10-18-L8_B06.tiff';
+imgData(4).DEM_file = 'Data/zone1/DEM_2015/DEM_raw.tiff';
+imgData(4).name = 'Zone 1 (2016)';
+
+% 2017. Sentinel
+imgData(5).blue_file = 'Data/zone1/2017/S2_WGS84/2017-10-10-S2_B02.tiff';
+imgData(5).green_file = 'Data/zone1/2017/S2_WGS84/2017-10-10-S2_B03.tiff';
+imgData(5).red_file = 'Data/zone1/2017/S2_WGS84/2017-10-10-S2_B04.tiff';
+imgData(5).nir_file = 'Data/zone1/2017/S2_WGS84/2017-10-10-S2_B08A.tiff';
+imgData(5).swir_file = 'Data/zone1/2017/S2_WGS84/2017-10-10-S2_B11.tiff';
+imgData(5).DEM_file = 'Data/zone1/DEM_2015/DEM_raw.tiff';
+imgData(5).name = 'Zone 1 (2017)';
+
+% 2018. Sentinel
+imgData(6).blue_file = 'Data/zone1/2018/S2_WGS84/2018-10-05-S2_B02.tiff';
+imgData(6).green_file = 'Data/zone1/2018/S2_WGS84/2018-10-05-S2_B03.tiff';
+imgData(6).red_file = 'Data/zone1/2018/S2_WGS84/2018-10-05-S2_B04.tiff';
+imgData(6).nir_file = 'Data/zone1/2018/S2_WGS84/2018-10-05-S2_B08A.tiff';
+imgData(6).swir_file = 'Data/zone1/2018/S2_WGS84/2018-10-05-S2_B11.tiff';
+imgData(6).DEM_file = 'Data/zone1/DEM_2015/DEM_raw.tiff';
+imgData(6).name = 'Zone 1 (2018)';
+
+% 2019. Sentinel
+imgData(7).blue_file = 'Data/zone1/2019/S2_WGS84/2019-10-10-S2_B02.tiff';
+imgData(7).green_file = 'Data/zone1/2019/S2_WGS84/2019-10-10-S2_B03.tiff';
+imgData(7).red_file = 'Data/zone1/2019/S2_WGS84/2019-10-10-S2_B04.tiff';
+imgData(7).nir_file = 'Data/zone1/2019/S2_WGS84/2019-10-10-S2_B08A.tiff';
+imgData(7).swir_file = 'Data/zone1/2019/S2_WGS84/2019-10-10-S2_B11.tiff';
+imgData(7).DEM_file = 'Data/zone1/DEM_2015/DEM_raw.tiff';
+imgData(7).name = 'Zone 1 (2019)';
 
 
 %% Define functions =======================================================
@@ -164,6 +204,12 @@ for i = 1:length(imgData)
         sum(cat(1, regionprops(imgData(i).processedLakes).Area)) ...
         * pixelSize ^ 2;
     imgData(i).averageLakeArea = imgData(i).lakeArea / imgData(i).numLakes;
+    fprintf('--- %s: Number of lakes: %d.\n', ...
+        imgData(i).name, imgData(i).numLakes);
+    fprintf('--- %s: Total lake area: %.1f m^2.\n', ...
+        imgData(i).name, imgData(i).lakeArea);
+    fprintf('--- %s: Average lake area: %.3f m^2.\n', ...
+        imgData(i).name, imgData(i).averageLakeArea);
         
     % Plot everything
     plotOverlay(imgData(i).normImage(:,:,[3,2,1]), ...

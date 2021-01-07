@@ -21,10 +21,10 @@ normImage(:,:,end) = rawImage(:,:,end);
 for i = 1:size(rawImage,3)-1
     raw_uint8 = im2uint8(rawImage(:,:,i)); % get the raw image as a uint8
     
-    % adjust the image to remove top and bottom 1%
-    raw_uint8 = imadjust(raw_uint8, ...
-         stretchlim(raw_uint8(raw_uint8 ~= 0), ...
-                     [0.01 0.99]), [0,1], 1);
+%     % adjust the image to remove top and bottom 1%
+%     raw_uint8 = imadjust(raw_uint8, ...
+%          stretchlim(raw_uint8(raw_uint8 ~= 0), ...
+%                      [0.01 0.99]), [0,1], 1);
     
     % Compute the histogram, then CDF of the raw Image
     [counts_raw, ~] = imhist(raw_uint8,256);
