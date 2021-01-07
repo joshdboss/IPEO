@@ -20,11 +20,12 @@ set(groot,'defaultfigureposition',[400 100 1000 400])
 
 
 %% Define variables =======================================================
-pixelSize = 19; % pixel size in meters
+% pixel size in meters. obtained from the reference matrix of the DEM
+pixelSize = 19.57;
 
-% Location of the labelled data
-indices_file = 'Data/zone1/index_justlakes.mat';
-labels_file = 'Data/zone1/labels_justlakes.mat';
+% % Location of the labelled data
+indices_file = 'Data/zone1/index_better.mat';
+labels_file = 'Data/zone1/labels_better.mat';
 
 % File names for the reference image.
 % The reference image is ALWAYS the first element in the imagData variable
@@ -54,7 +55,7 @@ imgData(2).name = 'Zone 1 (2014)';
 %% Define functions =======================================================
 imnorm = @(x) (x - min(x(:))) ./ (max(x(:)) - min(x(:)));
 
-% %% Label data =============================================================
+% %% Label data ===========================================================
 % % Label the data on the given region
 % % This section is commented since the labelROI function is quite buggy
 % % and labelling should be done beforehand.
@@ -81,10 +82,10 @@ load(labels_file);
 %% Loop through all images and find the lakes! ============================
 
 for i = 1:length(imgData)
-    fprintf('WORKING ON IMAGE %s\n', imgData(i).name);
+    fprintf('========== STARTING TO WORK ON IMAGE %s\n', imgData(i).name);
     
     % Load the image
-    fprintf('Loading image bands and DEM.\n');
+    fprintf('--- %s: Loading image bands and DEM.\n', imgData(i).name);
     [imgData(i).rawImage, imgData(i).refInfo, imgData(i).refMatrix] = ...
         loadImage(imgData(i).blue_file, ...
                   imgData(i).green_file, ...
@@ -92,46 +93,59 @@ for i = 1:length(imgData)
                   imgData(i).nir_file, ...
                   imgData(i).swir_file, ...
                   imgData(i).DEM_file);
-    fprintf('Bands and DEM loaded.\n');
+    fprintf('--- %s: Bands and DEM loaded.\n', imgData(i).name);
     
-    % Preprocess the data
-    fprintf('Preprocessing the data.\n');
-    imgData(i).preprocessedData = preprocess(imgData(i).rawImage, ...
-        imgData(i).refInfo);
-    fprintf('Data preprocessed.\n');
-    
-    % for images that are not the reference image
-    if i ~= 1
-        % perform histogram matching
+    % for the reference image
+    if i == 1
+        % normalize histograms
+        fprintf('--- %s: Normalizing the histograms.\n', imgData(i).name);
+        imgData(i).normImage = normalizeHistogram(imgData(i).rawImage, NaN);
+        fprintf('--- %s: Histograms normalized.\n', imgData(i).name);
+    else
+        % for the others, perform histogram matching with reference image
+        fprintf('--- %s: Matching the histograms.\n', imgData(i).name);
+        imgData(i).normImage = normalizeHistogram(imgData(i).rawImage, ...
+            imgData(1).normImage);
+        fprintf('--- %s: Histograms matched.\n', imgData(i).name);
     end
+    
+    % Extract the metrics
+    fprintf('--- %s: Extracting the metrics.\n', imgData(i).name);
+    imgData(i).imageMetrics = prepareMetrics(imgData(i).normImage, ...
+        imgData(i).refInfo);
+    fprintf('--- %s: Metrics extracted.\n', imgData(i).name);
+    
     
     % prepare the machine learning data with the reference image
     if i == 1
-        fprintf('Preparing machine learning data on reference image.\n');
+        fprintf('--- %s: Preparing machine learning data on reference image.\n', ...
+            imgData(i).name);
         [data_train_sc, label_train, data_valid_sc, label_valid, ...
-            dataMax, dataMin] = prepareML(imgData(i).preprocessedData, ...
+            dataMax, dataMin] = prepareML(imgData(i).imageMetrics, ...
             index, labels);
-        fprintf('Data prepared.\n');
+        fprintf('--- %s: Data prepared.\n', imgData(i).name);
         
         
         % compute the accuracy on training data
-        fprintf('Computing training accuracy.\n');
+        fprintf('--- %s: Computing training accuracy.\n', imgData(i).name);
         [~, train_acc] = classifyML(data_train_sc, label_train, false, ...
             data_train_sc, label_train, dataMax, dataMin);
-        fprintf('Training accuracy is of %.3f %%.\n', train_acc * 100);
+        fprintf('--- %s: Training accuracy is of %.3f %%.\n', ...
+            imgData(i).name, train_acc * 100);
         
         % compute the accuracy on validation data
-        fprintf('Computing validation accuracy.\n');
+        fprintf('--- %s: Computing validation accuracy.\n', imgData(i).name);
         [~, val_acc] = classifyML(data_valid_sc, label_valid, false, ...
             data_train_sc, label_train, dataMax, dataMin);
-        fprintf('Validation accuracy is of %.3f %%.\n', val_acc * 100);
+        fprintf('--- %s: Validation accuracy is of %.3f %%.\n', ...
+            imgData(i).name, val_acc * 100);
     end
     
     % Classify the images
-    fprintf('Classifying the image.\n');
-    [imgData(i).classMap, ~] = classifyML(imgData(i).preprocessedData, ...
+    fprintf('--- %s: Classifying the image.\n', imgData(i).name);
+    [imgData(i).classMap, ~] = classifyML(imgData(i).imageMetrics, ...
         NaN, true, data_train_sc, label_train, dataMax, dataMin);
-    fprintf('Image classified.\n');
+    fprintf('--- %s: Image classified.\n', imgData(i).name);
     
     % There are multiple classes in the labelled data to help the model
     % work better. However, only the lakes (label 1) are of interest
@@ -139,9 +153,10 @@ for i = 1:length(imgData)
     imgData(i).lakes = imgData(i).classMap == 1;
     
     % Post process the data
-    fprintf('Post-processing the image classification.\n');
+    fprintf('--- %s: Post-processing the image classification.\n', ...
+        imgData(i).name);
     imgData(i).processedLakes = postprocess(imgData(i).lakes);
-    fprintf('Image classified.\n');
+    fprintf('--- %s: Image classified.\n', imgData(i).name);
     
     % Get interesting data on the lakes
     imgData(i).numLakes = length(regionprops(imgData(i).processedLakes));
@@ -151,12 +166,12 @@ for i = 1:length(imgData)
     imgData(i).averageLakeArea = imgData(i).lakeArea / imgData(i).numLakes;
         
     % Plot everything
-    plotOverlay(imgData(i).rawImage(:,:,[3,2,1]), ...
+    plotOverlay(imgData(i).normImage(:,:,[3,2,1]), ...
         imgData(i).processedLakes, imgData(i).refMatrix, ...
         0.75, imgData(i).name)
     
 
-    fprintf('DONE WITH IMAGE %s\n', imgData(i).name)
+    fprintf('========== DONE WITH IMAGE %s\n', imgData(i).name)
 
 end
 

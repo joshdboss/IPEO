@@ -1,4 +1,4 @@
-function [imageMetrics] = preprocess(rawImage, refMat)
+function [imageMetrics] = prepareMetrics(rawImage, refMat)
 %Takes a raw image (bands 3-6 and DEM) and extracts the desired metrics
 %   Given a raw, pansharpened image with bands 3 to 6 and the DEM, extract
 %   the relevant indices that will allow proper lake identification. These
@@ -6,8 +6,8 @@ function [imageMetrics] = preprocess(rawImage, refMat)
 %   These indices were found to have the best results for supervised ML.
 %
 %INPUTS
-%   rawImage (M x N x 5): A pansharpened image containing bands 3-6
-%   and the DEM
+%   rawImage (M x N x 6): A pansharpened image with the histograms matched
+%   containing blue, green, red, nir and swir bands as well as the DEM
 %   refMat: Reference matrix of the image.
 %
 %OUTPUTS
@@ -16,24 +16,24 @@ function [imageMetrics] = preprocess(rawImage, refMat)
 %   bands 4 and 5 and finally the terrain slope.
 
 
-% Step 1. Increase contrast in the image bands
-% Pre-allocate matrix of the new band values for speed
-% Excludes the last index, since we are not adjusting DEM values
-adjusted_bands = zeros(size(rawImage(:,:,1:end-1))); 
-gamma = 1;
-for i = 1:size(rawImage,3)-1
-    current_band = rawImage(:,:,i);
-    % remove top and bottom 1%
-    adjusted_bands(:,:,i) = imadjust(current_band, ...
-        stretchlim(current_band(current_band ~= 0), ...
-                    [0.01 0.99]), [0,1], gamma);
-end
+% % Step 1. Increase contrast in the image bands
+% % Pre-allocate matrix of the new band values for speed
+% % Excludes the last index, since we are not adjusting DEM values
+% adjusted_bands = zeros(size(rawImage(:,:,1:end-1))); 
+% gamma = 1;
+% for i = 1:size(rawImage,3)-1
+%     current_band = rawImage(:,:,i);
+%     % remove top and bottom 1%
+%     adjusted_bands(:,:,i) = imadjust(current_band, ...
+%         stretchlim(current_band(current_band ~= 0), ...
+%                     [0.01 0.99]), [0,1], gamma);
+% end
 
-% isolate the bands for verbosity
-green_band = adjusted_bands(:,:,2);
-red_band = adjusted_bands(:,:,3);
-nir_band = adjusted_bands(:,:,4);
-swir_band = adjusted_bands(:,:,5);
+% Step 1. Isolate the bands for verbosity
+green_band = rawImage(:,:,2);
+red_band = rawImage(:,:,3);
+nir_band = rawImage(:,:,4);
+swir_band = rawImage(:,:,5);
 
 
 % Step 2. Get the water and snow indices from the bands
