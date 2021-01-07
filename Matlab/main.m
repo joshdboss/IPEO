@@ -99,14 +99,35 @@ imgData(7).name = 'Zone 1 (2019)';
 imgData(7).zone = 1;
 imgData(7).year = 2019;
 
-% % Zone 2 2020
-% imgData(8).blue_file = 'Data/zone2/2019/S2_WGS84/2019-10-10-S2_B02.tiff';
-% imgData(8).green_file = 'Data/zone2/2019/S2_WGS84/2019-10-10-S2_B03.tiff';
-% imgData(8).red_file = 'Data/zone2/2019/S2_WGS84/2019-10-10-S2_B04.tiff';
-% imgData(8).nir_file = 'Data/zone2/2019/S2_WGS84/2019-10-10-S2_B08A.tiff';
-% imgData(8).swir_file = 'Data/zone2/2019/S2_WGS84/2019-10-10-S2_B11.tiff';
-% imgData(8).DEM_file = 'Data/zone2/DEM_2015/DEM_raw.tiff';
-% imgData(8).name = 'Zone 2 (2020)';
+% Zone 2 2015
+imgData(8).blue_file = 'Data/zone2/2015/2015-10-09-L8_B02.tiff';
+imgData(8).green_file = 'Data/zone2/2015/2015-10-09-L8_B03.tiff';
+imgData(8).red_file = 'Data/zone2/2015/2015-10-09-L8_B04.tiff';
+imgData(8).nir_file = 'Data/zone2/2015/2015-10-09-L8_B05.tiff';
+imgData(8).swir_file = 'Data/zone2/2015/2015-10-09-L8_B06.tiff';
+imgData(8).DEM_file = 'Data/zone2/DEM/DEM_raw.tiff';
+imgData(8).zone = 2;
+imgData(8).year = 2015;
+
+% Zone 2 2020
+imgData(9).blue_file = 'Data/zone2/2020/2020-10-11-S2_B02.tiff';
+imgData(9).green_file = 'Data/zone2/2020/2020-10-11-S2_B03.tiff';
+imgData(9).red_file = 'Data/zone2/2020/2020-10-11-S2_B04.tiff';
+imgData(9).nir_file = 'Data/zone2/2020/2020-10-11-S2_B08A.tiff';
+imgData(9).swir_file = 'Data/zone2/2020/2020-10-11-S2_B11.tiff';
+imgData(9).DEM_file = 'Data/zone2/DEM/DEM_raw.tiff';
+imgData(9).zone = 2;
+imgData(9).year = 2020;
+
+% Zone 1 2013
+imgData(10).blue_file = 'Data/zone1/2013/L8_WGS84/2013-10-10-L8-B02.tiff';
+imgData(10).green_file = 'Data/zone1/2013/L8_WGS84/2013-10-10-L8-B03.tiff';
+imgData(10).red_file = 'Data/zone1/2013/L8_WGS84/2013-10-10-L8-B04.tiff';
+imgData(10).nir_file = 'Data/zone1/2013/L8_WGS84/2013-10-10-L8-B05.tiff';
+imgData(10).swir_file = 'Data/zone1/2013/L8_WGS84/2013-10-10-L8-B06.tiff';
+imgData(10).DEM_file = 'Data/zone1/DEM_2015/DEM_raw.tiff';
+imgData(10).zone = 1;
+imgData(10).year = 2013;
 
 
 %% Define functions =======================================================
@@ -182,7 +203,6 @@ for i = 1:length(imgData)
     fprintf('--- Zone %d (%d): Metrics extracted.\n', ...
         imgData(i).zone, imgData(i).year);
     
-    
     % prepare the machine learning data with the reference image
     if i == 1
         fprintf('--- Zone %d (%d): Preparing machine learning data on reference image.\n', ...
@@ -193,22 +213,31 @@ for i = 1:length(imgData)
         fprintf('--- Zone %d (%d): Data prepared.\n', ...
             imgData(i).zone, imgData(i).year);
         
-        
         % compute the accuracy on training data
         fprintf('--- Zone %d (%d): Computing training accuracy.\n', ...
             imgData(i).zone, imgData(i).year);
-        [~, train_acc] = classifyML(data_train_sc, label_train, false, ...
-            data_train_sc, label_train, dataMax, dataMin);
+        [~, train_acc, lake_train_precision, lake_train_recall] = ...
+            classifyML(data_train_sc, label_train, false, data_train_sc, ...
+            label_train, dataMax, dataMin);
         fprintf('--- Zone %d (%d): Training accuracy is of %.3f %%.\n', ...
             imgData(i).zone, imgData(i).year, train_acc * 100);
+        fprintf('--- Zone %d (%d): Training lake precision is of %.3f %%.\n', ...
+            imgData(i).zone, imgData(i).year, lake_train_precision * 100);
+        fprintf('--- Zone %d (%d): Training lake recall is of %.3f %%.\n', ...
+            imgData(i).zone, imgData(i).year, lake_train_recall * 100);
         
-        % compute the accuracy on validation data
+        % compute the accuracy and statistics on validation data
         fprintf('--- Zone %d (%d): Computing validation accuracy.\n', ...
             imgData(i).zone, imgData(i).year);
-        [~, val_acc] = classifyML(data_valid_sc, label_valid, false, ...
-            data_train_sc, label_train, dataMax, dataMin);
+        [~, val_acc, lake_val_precision, lake_val_recall] = ...
+            classifyML(data_valid_sc, label_valid, false, data_train_sc, ...
+            label_train, dataMax, dataMin);
         fprintf('--- Zone %d (%d): Validation accuracy is of %.3f %%.\n', ...
             imgData(i).zone, imgData(i).year, val_acc * 100);
+        fprintf('--- Zone %d (%d): Validation lake precision is of %.3f %%.\n', ...
+            imgData(i).zone, imgData(i).year, lake_val_precision * 100);
+        fprintf('--- Zone %d (%d): Validation lake recall is of %.3f %%.\n', ...
+            imgData(i).zone, imgData(i).year, lake_val_recall * 100);
     end
     
     % Classify the images
@@ -257,7 +286,7 @@ end
 
 
 %% Generate area comparison graphs
-uniqueZones = unique(cat(1,imgData.zone));
+uniqueZones = unique(cat(1,imgData.zone))';
 
 for zoneName = uniqueZones
     data = imgData(cat(1,imgData.zone) == zoneName); % scenes in right zone

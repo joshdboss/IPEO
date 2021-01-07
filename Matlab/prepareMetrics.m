@@ -52,6 +52,7 @@ filtered_DEM = imfilter(rawImage(:,:,end),h3);
 
 
 % Step 5. Assemble the matrix of the relevant image data to return
+%imageMetrics(:,:,1:5) = rawImage(:,:,1:end-1);
 imageMetrics(:,:,1) = ndwi;
 imageMetrics(:,:,2) = ndsi;
 imageMetrics(:,:,3) = mndwi;

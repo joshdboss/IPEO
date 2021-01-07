@@ -22,17 +22,17 @@ set(gcf,'Position',[100 -100 1000 500])
 subplot(1,2,1);
 mapshow(background, refmat)
 axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
+xlabel('Longitude')
+ylabel('Lattitude')
 title(plot_title);
 
 % with overlay
 subplot(1,2,2);
 mapshow((1 - transparency) * background + transparency * RGB, refmat)
 axis equal tight
-xlabel('Easting [m]')
-ylabel('Northing [m]')
-title(strcat(plot_title,' with overlay'));
+xlabel('Longitude')
+ylabel('Lattitude')
+title(strcat(plot_title,' with lakes overlayed'));
 
 end
 

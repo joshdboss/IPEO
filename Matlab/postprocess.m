@@ -18,7 +18,7 @@ function [processedLakeMap] = postprocess(rawLakeMap)
 
 % Define the shape for the morphology. Disk as lakes do not have a prefered
 % shape. Could be verified in a future project
-SE = strel('disk',3); % 'diamond' 'square'
+SE = strel('disk',5); % 'diamond' 'square'
 % Morphology works best with uint8
 im_uint8 = uint8(255 * mat2gray(rawLakeMap));
 

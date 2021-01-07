@@ -1,4 +1,5 @@
-function [classMap, accuracy] = classifyML(classImage, classLabels, ...
+function [classMap, accuracy, lakePrecision, lakeRecall] = ...
+    classifyML(classImage, classLabels, ...
     reshp, trainedData, trainedLabels, dataMax, dataMin)
 %Classifies the given image using a known labelled dataset
 %   Using a known labelled image, classify another image. First
@@ -20,6 +21,8 @@ function [classMap, accuracy] = classifyML(classImage, classLabels, ...
 %OUTPUTS
 %   classMap (M x N): The labels of each of the pixels on the image
 %   accuracy (float) : accuracy of the model, if labels given
+%   lakePrecision (float): the classification precision of the lakes
+%   lakeRecall (float): the classification recall of the lakes
 
 
 % Reshape the image into a 2d matrix if desired
@@ -44,8 +47,12 @@ end
 if ~all(isnan(classLabels),'all')
     C = confusionmat(classLabels, classMap);
     accuracy = sum(diag(C)) / sum(C,'all');
+    lakePrecision = C(2,2) / sum(C(2,:));
+    lakeRecall = C(2,2) / sum(C(:,2));
 else
     accuracy = NaN;
+    lakePrecision = NaN;
+    lakeRecall = NaN;
 end
 
 end
